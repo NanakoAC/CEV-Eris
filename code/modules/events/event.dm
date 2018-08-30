@@ -96,22 +96,26 @@
 //This proc will handle the calls to the appropiate procs.
 /datum/event/Process()
 	if(activeFor > startWhen && activeFor < endWhen)
-		tick()
+		spawn()
+			tick()
 
 	if(activeFor == startWhen)
 		isRunning = 1
-		start()
+		spawn()
+			start()
 
 	if(activeFor == announceWhen)
 		announce()
 
 	if(activeFor == endWhen)
 		isRunning = 0
-		end()
+		spawn()
+			end()
 
 	// Everything is done, let's clean up.
 	if(activeFor >= lastProcessAt())
-		kill()
+		spawn()
+			kill()
 
 	activeFor++
 
