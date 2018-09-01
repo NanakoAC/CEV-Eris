@@ -22,7 +22,6 @@
 	icon = 'icons/obj/Hatton.dmi'
 	icon_state = "Hatton_Hammer_1"
 	item_state = "Hatton_Hammer_1"
-	flags = PASSTABLE | CONDUCT
 	slot_flags = SLOT_BELT
 	//m_amt = 2000
 	w_class = ITEM_SIZE_NORMAL

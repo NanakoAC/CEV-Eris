@@ -10,7 +10,7 @@
 	explosion_resistance = 1
 	var/health = 50
 	var/destroyed = 0
-
+	pass_flags = PASSGRILLE
 
 /obj/structure/grille/ex_act(severity)
 	qdel(src)
@@ -50,13 +50,10 @@
 
 /obj/structure/grille/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	if(air_group || (height==0)) return 1
-	if(istype(mover) && mover.checkpass(PASSGRILLE))
-		return 1
+	if(istype(mover, /obj/item/projectile))
+		return prob(30)
 	else
-		if(istype(mover, /obj/item/projectile))
-			return prob(30)
-		else
-			return !density
+		return ..()
 
 /obj/structure/grille/bullet_act(var/obj/item/projectile/Proj)
 	if(!Proj)	return

@@ -58,6 +58,7 @@ for reference:
 	var/health = 100
 	var/maxhealth = 100
 	var/material/material
+	pass_flags = PASSCRAWL
 
 /obj/structure/barricade/New(var/newloc, var/material_name)
 	..(newloc)
@@ -128,10 +129,8 @@ for reference:
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)//So bullets will fly over and stuff.
 	if(air_group || (height==0))
 		return 1
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return 1
 	else
-		return 0
+		return ..()
 
 //Actual Deployable machinery stuff
 /obj/machinery/deployable
@@ -223,10 +222,7 @@ for reference:
 /obj/machinery/deployable/barrier/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)//So bullets will fly over and stuff.
 	if(air_group || (height==0))
 		return 1
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return 1
-	else
-		return 0
+	return ..()
 
 /obj/machinery/deployable/barrier/proc/explode()
 

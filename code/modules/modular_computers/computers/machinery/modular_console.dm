@@ -14,6 +14,7 @@
 	base_active_power_usage = 500
 	max_hardware_size = 3
 	steel_sheet_cost = 10
+	pass_flags = PASSCRAWL
 
 /obj/machinery/modular_computer/console/buildable/New()
 	..()

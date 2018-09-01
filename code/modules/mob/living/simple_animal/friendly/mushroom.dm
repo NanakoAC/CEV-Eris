@@ -12,6 +12,7 @@
 	response_disarm = "gently pushes aside"
 	response_harm   = "whacks"
 	harm_intent_damage = 5
+	pass_flags = PASSCRAWL
 	var/datum/seed/seed
 	var/harvest_time
 	var/min_explode_time = 1200

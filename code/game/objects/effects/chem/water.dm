@@ -3,7 +3,7 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "extinguish"
 	mouse_opacity = 0
-	pass_flags = PASSTABLE | PASSGRILLE
+	pass_flags = PASSCRAWL | PASSGRILLE
 
 /obj/effect/effect/water/New(loc)
 	..()

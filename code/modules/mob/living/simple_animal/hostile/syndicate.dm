@@ -134,7 +134,7 @@
 	desc = "A small, twin-bladed machine capable of inflicting very deadly lacerations."
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "viscerator_attack"
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	health = 15
 	maxHealth = 15
 	melee_damage_lower = 15

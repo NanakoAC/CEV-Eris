@@ -23,7 +23,7 @@
 	var/maxSqueals = 5//SPAM PROTECTION
 	var/last_squealgain = 0// #TODO-FUTURE: Remove from life() once something else is created
 	var/squeakcooldown = 0
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL|PASSGRILLE //Mice are very very small
 	speak_chance = 5
 	turns_per_move = 5
 	see_in_dark = 6

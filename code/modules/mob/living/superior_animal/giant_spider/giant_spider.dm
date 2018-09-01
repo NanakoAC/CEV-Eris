@@ -26,7 +26,7 @@
 	var/poison_type = "toxin"
 	faction = "spiders"
 	var/busy = 0
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	move_to_delay = 6
 	speed = 3
 

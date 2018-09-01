@@ -120,6 +120,7 @@ Class Procs:
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/weapon/circuitboard/circuit = null
 	var/frame_type = FRAME_DEFAULT
+	pass_flags = PASSCRAWL
 
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()

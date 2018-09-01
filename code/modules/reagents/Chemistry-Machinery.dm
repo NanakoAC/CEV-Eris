@@ -30,6 +30,7 @@
 	var/list/dispensable_reagents = list("hydrazine","lithium","carbon","ammonia","acetone",
 	"sodium","aluminum","silicon","phosphorus","sulfur","hclacid","potassium","iron",
 	"copper","mercury","radium","water","ethanol","sugar","sacid","tungsten")
+	pass_flags = PASSCRAWL
 
 /obj/machinery/chemical_dispenser/proc/recharge()
 	if(stat & (BROKEN|NOPOWER)) return
@@ -272,6 +273,7 @@
 	var/client/has_sprites = list()
 	var/max_pill_count = 20
 	flags = OPENCONTAINER
+	pass_flags = PASSCRAWL
 
 /obj/machinery/chem_master/New()
 	..()
@@ -562,6 +564,7 @@
 		/obj/item/stack/material/silver = MATERIAL_SILVER,
 		/obj/item/stack/material/mhydrogen = "hydrogen"
 		)
+	pass_flags = PASSCRAWL|PASSPROJECTILE
 
 /obj/machinery/reagentgrinder/New()
 	..()

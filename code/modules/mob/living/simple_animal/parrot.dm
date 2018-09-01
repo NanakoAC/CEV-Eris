@@ -31,7 +31,7 @@
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "parrot_fly"
 	icon_dead = "parrot_dead"
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	mob_size = MOB_SMALL
 
 	speak_emote = list("squawks","says","yells")

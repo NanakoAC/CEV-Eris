@@ -4,7 +4,7 @@
 	desc = "What IS that?"
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "alien"
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	health = 100
 	maxHealth = 100
 	mob_size = 4

@@ -38,6 +38,7 @@
 
 	// turf animation
 	var/atom/movable/overlay/c_animation = null
+	pass_flags = 0
 
 /obj/machinery/door/can_prevent_fall()
 	return density
@@ -145,7 +146,7 @@
 	if(air_group) return !block_air_zones
 	if(istype(mover) && mover.checkpass(PASSGLASS))
 		return !opacity
-	return !density
+	return ..()
 
 
 /obj/machinery/door/proc/bumpopen(mob/user as mob)

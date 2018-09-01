@@ -7,6 +7,7 @@
 	icon_state = "watertank"
 	density = 1
 	anchored = 0
+	pass_flags = PASSCRAWL
 
 	var/amount_per_transfer_from_this = 10
 	var/possible_transfer_amounts = list(10,25,50,100)

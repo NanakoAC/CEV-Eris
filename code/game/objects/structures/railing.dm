@@ -16,6 +16,7 @@
 	//var/LeftSide = list(0,0,0)// Ќужны дл€ хранени€ данных
 	//var/RightSide = list(0,0,0)
 	var/check = 0
+	pass_flags = PASSCRAWL|PASSPROJECTILE
 
 /obj/structure/railing/New(loc, constructed=0)
 	..()
@@ -35,16 +36,6 @@
 		R.update_icon()
 	. = ..()
 
-/obj/structure/railing/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if(!mover)
-		return 1
-
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return 1
-	if(get_dir(loc, target) == dir)
-		return !density
-	else
-		return 1
 //32 и 4 - в той же клетке
 
 /obj/structure/railing/examine(mob/user)
@@ -202,7 +193,7 @@
 	return
 
 /obj/structure/railing/CheckExit(atom/movable/O as mob|obj, target as turf)
-	if(istype(O) && O.checkpass(PASSTABLE))
+	if(istype(O) && O.checkpass(pass_flags))
 		return 1
 	if(get_dir(O.loc, target) == dir)
 		return 0

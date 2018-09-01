@@ -214,3 +214,14 @@
 	playsound(src.loc, 'sound/weapons/guns/interact/pistol_magout.ogg', 75, 1)
 	M << SPAN_NOTICE("You insert [I] into [src].")
 	return TRUE
+
+
+//Intended as a solution to the problem of too many special case checks in canpass.
+//Now you can set the pass_flags on a dense object and they will be used to check whether incoming objects can pass it
+//This obsoletes many checks like if(istype(mover) && mover.checkpass(PASSTABLE))
+//Special case checks may still be necessary for unusual behaviour, but this simplifies a lot of checks against a hardcoded type
+
+/obj/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
+	if (mover && density && pass_flags && mover.checkpass(pass_flags))
+		return TRUE
+	return ..(mover, target, height, air_group)

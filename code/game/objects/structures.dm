@@ -6,6 +6,7 @@
 	var/breakable
 	var/parts
 	var/list/climbers = list()
+	pass_flags = PASSCRAWL
 
 /obj/structure/get_fall_damage()
 	return w_class * 3

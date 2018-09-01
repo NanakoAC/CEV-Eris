@@ -26,6 +26,8 @@
 
 	var/list/connections = list("nw0", "ne0", "sw0", "se0")
 
+	pass_flags = PASSCRAWL|PASSPROJECTILE
+
 /obj/structure/table/proc/update_material()
 	var/old_maxhealth = maxhealth
 	if(!material)

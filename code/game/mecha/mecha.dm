@@ -77,6 +77,7 @@
 	var/obj/item/mecha_parts/mecha_equipment/selected
 	var/max_equip = 3
 	var/datum/events/events
+	pass_flags = PASSCRAWL
 
 /obj/mecha/can_prevent_fall()
 	return TRUE

@@ -14,7 +14,7 @@
 	attacktext = "nipped"
 	friendly = "prods"
 	wander = 0
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	universal_understand = 1
 	//holder_type = /obj/item/weapon/holder/borer //Theres no inhand sprites for holding borers, it turns you into a pink square
 

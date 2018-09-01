@@ -71,9 +71,10 @@
 
 
 // Flags for pass_flags.
-#define PASSTABLE  0x1
-#define PASSGLASS  0x2
-#define PASSGRILLE 0x4
+#define PASSCRAWL  		0x1 //For small creatures moving under their own power
+#define PASSPROJECTILE 	0x2 //For dumb projectiles fired on a trajectory
+#define PASSGLASS  		0x4 //Mostly for lasers and light effects
+#define PASSGRILLE 		0x8 //Gases, small projectiles, very small creatures
 
 // Bitmasks for the flags_inv variable. These determine when a piece of clothing hides another, i.e. a helmet hiding glasses.
 // WARNING: The following flags apply only to the external suit!

@@ -3,7 +3,7 @@
 	icon = 'icons/obj/iv_drip.dmi'
 	anchored = 0
 	density = 1
-
+	pass_flags = PASSCRAWL|PASSPROJECTILE //This thin thing will never block anything
 
 /obj/machinery/iv_drip/var/mob/living/carbon/human/attached = null
 /obj/machinery/iv_drip/var/mode = 1 // 1 is injecting, 0 is taking blood.
@@ -162,7 +162,3 @@
 
 	usr << "<span class='notice'>[attached ? attached : "No one"] is attached.</span>"
 
-/obj/machinery/iv_drip/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if(height && istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
-		return 1
-	return ..()

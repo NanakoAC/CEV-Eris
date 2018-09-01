@@ -154,7 +154,7 @@
 	attacktext = "kicked"
 	health = 1
 	var/amount_grown = 0
-	pass_flags = PASSTABLE | PASSGRILLE
+	pass_flags = PASSCRAWL | PASSGRILLE
 	mob_size = MOB_MINISCULE
 
 /mob/living/simple_animal/chick/New()
@@ -192,7 +192,7 @@ var/global/chicken_count = 0
 	health = 10
 	var/eggsleft = 0
 	var/body_color
-	pass_flags = PASSTABLE
+	pass_flags = PASSCRAWL
 	mob_size = MOB_SMALL
 
 /mob/living/simple_animal/chicken/New()

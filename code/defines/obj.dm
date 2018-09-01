@@ -30,7 +30,7 @@
 	unacidable = 1//Just to be sure.
 	var/def_zone
 	flags = PROXMOVE
-	pass_flags = PASSTABLE
+	pass_flags = PASSPROJECTILE
 
 
 /obj/effect/begin

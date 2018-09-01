@@ -16,7 +16,7 @@
 	density = TRUE
 	unacidable = TRUE
 	anchored = TRUE //There's a reason this is here, Mport. God fucking damn it -Agouri. Find&Fix by Pete. The reason this is here is to stop the curving of emitter shots.
-	pass_flags = PASSTABLE
+	pass_flags = PASSPROJECTILE
 	mouse_opacity = 0
 	var/bumped = FALSE		//Prevents it from hitting more than one guy at once
 	var/hitsound_wall = ""//"ricochet"
@@ -432,7 +432,7 @@
 				return 1
 
 //Helper proc to check if you can hit them or not.
-/proc/check_trajectory(atom/target as mob|obj, atom/firer as mob|obj, var/pass_flags=PASSTABLE|PASSGLASS|PASSGRILLE, flags=null)
+/proc/check_trajectory(atom/target as mob|obj, atom/firer as mob|obj, var/pass_flags=PASSPROJECTILE|PASSGLASS|PASSGRILLE, flags=null)
 	if(!istype(target) || !istype(firer))
 		return 0
 

@@ -8,11 +8,9 @@
 			return !density
 		else
 			return 1
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return 1
 	if(locate(/obj/structure/table) in get_turf(mover))
 		return 1
-	return 0
+	return ..()
 
 //checks if projectile 'P' from turf 'from' can hit whatever is behind the table. Returns 1 if it can, 0 if bullet stops.
 /obj/structure/table/proc/check_cover(obj/item/projectile/P, turf/from)
@@ -48,14 +46,12 @@
 	return 1
 
 /obj/structure/table/CheckExit(atom/movable/O as mob|obj, target as turf)
-	if(istype(O) && O.checkpass(PASSTABLE))
-		return 1
 	if (flipped==1)
 		if (get_dir(loc, target) == dir)
 			return !density
 		else
 			return 1
-	return 1
+	return ..()
 
 
 /obj/structure/table/MouseDrop_T(obj/item/O, mob/living/user)
