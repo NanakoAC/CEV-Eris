@@ -23,8 +23,11 @@
 
 /datum/shuttle/New(_name, var/obj/effect/shuttle_landmark/initial_location)
 	..()
+
 	if(_name)
 		src.name = _name
+
+	world << "New shuttle [name]"
 
 	var/list/areas = list()
 	if(!islist(shuttle_area))
@@ -34,14 +37,20 @@
 		if(!istype(A))
 			CRASH("Shuttle \"[name]\" couldn't locate area [T].")
 		areas += A
+		world << "Shuttle found area [A]"
 	shuttle_area = areas
 
 	if(initial_location)
 		current_location = initial_location
+		world << "Setting current location to initial location [initial_location]"
 	else
+		world << "Attempting to locate current location [current_location]"
+
 		current_location = locate(current_location)
+		world << "Current location type: [current_location.type]"
+
 	if(!istype(current_location))
-		CRASH("Shuttle \"[name]\" could not find its starting location.")
+		CRASH("Shuttle \"[name]\" could not find its starting location. ")
 
 	if(src.name in shuttle_controller.shuttles)
 		CRASH("A shuttle with the name '[name]' is already defined.")

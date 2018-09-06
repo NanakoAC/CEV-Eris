@@ -23,9 +23,13 @@
 	//If set, will set base area and turf type to same as where it was spawned at
 	var/autoset
 
+	var/test1 = "word"
+	var/test2 = "word"
 /obj/effect/shuttle_landmark/New()
 	..()
-	tag = copytext(landmark_tag, 1) //since tags cannot be set at compile time
+	landmark_tag = copytext(landmark_tag, 1) //since tags cannot be set at compile time
+	tag = landmark_tag
+
 	if(autoset)
 		base_area = get_area(src)
 		var/turf/T = get_turf(src)
@@ -36,14 +40,25 @@
 	name = name + " ([x],[y])"
 
 /obj/effect/shuttle_landmark/Initialize()
-	. = ..()
-	spawn(10)
-		if(docking_controller)
-			var/docking_tag = docking_controller
-			docking_controller = locate(docking_tag)
-			if(!istype(docking_controller))
-				admin_notice("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
-		shuttle_controller.register_landmark(tag, src)
+	..()
+	return INITIALIZE_HINT_LATELOAD
+
+/obj/effect/shuttle_landmark/LateInitialize()
+	if(docking_controller)
+		var/docking_tag = docking_controller
+		docking_controller = locate(docking_tag)
+		if(!istype(docking_controller))
+			admin_notice("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
+			for (var/obj/machinery/embedded_controller/EC in world)
+				if (EC.program && EC.program.tag)
+					world.log << "Docking Controller and Program tag initial '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+					EC.program.tag = copytext(EC.program.tag, 1)
+					docking_tag = copytext(EC.program.tag, 1)
+					world.log << "Docking Controller and Program tag after copytext '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+					EC.program.tag += "-"
+					docking_tag += "-"
+					world.log << "Docking Controller and Program tag after copytext '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+	shuttle_controller.register_landmark(tag, src)
 
 /obj/effect/shuttle_landmark/proc/is_valid(var/datum/shuttle/shuttle)
 	if(shuttle.current_location == src)
