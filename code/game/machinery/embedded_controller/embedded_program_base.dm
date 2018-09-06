@@ -12,6 +12,7 @@
 		id_tag = R.id_tag
 
 	id_tag = copytext(id_tag, 1) //since tags cannot be set at compile time
+	world.log << "Program [id_tag] initialized at [world.time]"
 
 /datum/computer/file/embedded_program/proc/receive_user_command(command)
 	return

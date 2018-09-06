@@ -108,8 +108,17 @@
 	landmark_tag = "nav_transit_hulk"
 	base_turf = /turf/space
 
+
+
 //Skipjack
 
+//Commented out by nanako, 6th september 2018
+//Landmarks for the skipjack and mercenary ship simply don't seem to exist, and as such these shuttles - and their associated modes, are broken
+//They have been commented out to stop them from throwing runtime errors on startup
+
+//Some of the landmarks have not been commented out as they are still mapped in
+//However the start landmarks are not mapped and so these shuttles cannot work
+/*
 /datum/shuttle/autodock/multi/antag/skipjack
 	name = "Skipjack"
 	warmup_time = 0
@@ -127,7 +136,7 @@
 	home_waypoint = "nav_skipjack_start"
 	arrival_message = "Attention, vessel detected entering vessel proximity."
 	departure_message = "Attention, vessel detected leaving vessel proximity."
-
+*/
 /obj/effect/shuttle_landmark/skipjack/start
 	name = "Raider Outpost"
 	icon_state = "shuttle-red"
@@ -157,7 +166,7 @@
 
 
 //Merc
-
+/*
 /datum/shuttle/autodock/multi/antag/mercenary
 	name = "Mercenary"
 	warmup_time = 0
@@ -175,7 +184,7 @@
 	home_waypoint = "nav_merc_start"
 	arrival_message = "Attention, vessel detected entering vessel proximity."
 	departure_message = "Attention, vessel detected leaving vessel proximity."
-
+*/
 /obj/effect/shuttle_landmark/merc/start
 	name = "Mercenary Base"
 	icon_state = "shuttle-red"

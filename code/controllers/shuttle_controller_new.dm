@@ -34,6 +34,7 @@ var/global/datum/shuttle_controller/shuttle_controller
 /datum/shuttle_controller/proc/initialize_shuttles()
 	for(var/shuttle_type in subtypesof(/datum/shuttle))
 		var/datum/shuttle/shuttle = shuttle_type
+		world << "Initializing shuttle type: [shuttle_type]"
 		if (!initial(shuttle.defer_initialisation))
 			initialise_shuttle(shuttle_type)
 

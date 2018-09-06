@@ -1,3 +1,4 @@
+//The actual shuttles used in a map are located in the maps folder in an unincluded file like shuttles-eris.dm
 //shuttle moving state defines are in setup.dm
 
 /datum/shuttle
@@ -22,6 +23,7 @@
 	var/defer_initialisation = FALSE //this shuttle will/won't be initialised by something after roundstart
 
 /datum/shuttle/New(_name, var/obj/effect/shuttle_landmark/initial_location)
+	world << "NEW SHUTTLE:  Type: [type], Name:[_name], Current Location: [current_location]"
 	..()
 
 	if(_name)
@@ -47,14 +49,17 @@
 		world << "Attempting to locate current location [current_location]"
 
 		current_location = locate(current_location)
-		world << "Current location type: [current_location.type]"
+		if (current_location)
+			world << "Current location type: [current_location.type]"
+		else
+			world << "!!!!!! Failed to locate current location !!!!!!"
 
 	if(!istype(current_location))
-		CRASH("Shuttle \"[name]\" could not find its starting location. ")
+		CRASH("Shuttle \"[name]\" could not find its starting location.")
 
 	if(src.name in shuttle_controller.shuttles)
 		CRASH("A shuttle with the name '[name]' is already defined.")
-	shuttle_controller.shuttles[src.name] = src
+	shuttle_controller.shuttles[src.name]	 = src
 	if(flags & SHUTTLE_FLAGS_PROCESS)
 		shuttle_controller.process_shuttles += src
 	if(flags & SHUTTLE_FLAGS_SUPPLY)
