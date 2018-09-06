@@ -331,7 +331,8 @@ SUBSYSTEM_DEF(garbage)
 
 #ifdef GC_FAILURE_HARD_LOOKUP
 /client/var/running_find_references = FALSE
-world/loop_checks = FALSE
+///client/var/list/references_to_check =
+//world/loop_checks = FALSE
 
 /datum/verb/find_refs()
 	set category = "Debug"
@@ -370,6 +371,10 @@ world/loop_checks = FALSE
 	DoSearchVar(GLOB)
 	for(var/datum/thing in world)
 		DoSearchVar(thing, "WorldRef: [thing]")
+
+	//while(running_find_references)
+
+
 	testing("Completed search for references to a [type].")
 	if(usr && usr.client)
 		usr.client.running_find_references = null
@@ -396,6 +401,7 @@ world/loop_checks = FALSE
 		if(D.last_find_references == last_find_references)
 			return
 		D.last_find_references = last_find_references
+		CHECK_TICK
 		for(var/V in D.vars)
 			for(var/varname in D.vars)
 				var/variable = D.vars[varname]
@@ -406,16 +412,21 @@ world/loop_checks = FALSE
 						testing("Found [src.type] \ref[src] in [D.type]'s [varname] list var. Global: [Xname]")
 
 					for(var/I in variable)
-						DoSearchVar(I, TRUE)
+						spawn()
+							DoSearchVar(I, TRUE)
 				else
-					DoSearchVar(variable, "[Xname]: [varname]")
+					spawn()
+						DoSearchVar(variable, "[Xname]: [varname]")
+
 
 	else if(islist(X))
+		CHECK_TICK
 		if(src in X)
 			testing("Found [src.type] \ref[src] in list [Xname].")
 
 		for(var/I in X)
-			DoSearchVar(I, Xname + ": list")
+			spawn()
+				DoSearchVar(I, Xname + ": list")
 
 	CHECK_TICK
 
