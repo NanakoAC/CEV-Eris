@@ -1,4 +1,4 @@
-//making this separate from /obj/landmark until that mess can be dealt with
+	//making this separate from /obj/landmark until that mess can be dealt with
 /obj/effect/shuttle_landmark
 	name = "Nav Point"
 	icon = 'icons/misc/landmarks.dmi'
@@ -26,6 +26,7 @@
 	var/test1 = "word"
 	var/test2 = "word"
 /obj/effect/shuttle_landmark/New()
+	world.log << "Shuttle landmark [landmark_tag] created at [world.timeofday]"
 	..()
 	landmark_tag = copytext(landmark_tag, 1) //since tags cannot be set at compile time
 	tag = landmark_tag
@@ -44,20 +45,34 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/effect/shuttle_landmark/LateInitialize()
+	..()
+	world.log << "Shuttle landmark [landmark_tag] initialized at [world.timeofday]"
 	if(docking_controller)
 		var/docking_tag = docking_controller
 		docking_controller = locate(docking_tag)
 		if(!istype(docking_controller))
-			admin_notice("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
+			admin_notice("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'. Time of failure was [world.time]")
+			var/tries = 1
 			for (var/obj/machinery/embedded_controller/EC in world)
 				if (EC.program && EC.program.tag)
 					world.log << "Docking Controller and Program tag initial '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
-					EC.program.tag = copytext(EC.program.tag, 1)
-					docking_tag = copytext(EC.program.tag, 1)
-					world.log << "Docking Controller and Program tag after copytext '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
-					EC.program.tag += "-"
-					docking_tag += "-"
-					world.log << "Docking Controller and Program tag after copytext '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+					if (docking_tag == EC.program.tag)
+						world.log << "We have a match!"
+						docking_controller = locate(docking_tag) //We already tried this 50 times before but yet it will succeed this time
+						if(!istype(docking_controller))
+							world.log << "Docking controller somehow failed again"
+						else
+							world.log << "Docking controller successfully paired up. [docking_controller], [docking_controller.type]"
+					else
+						world.log << "Docking Controller '[docking_tag]', \ref[docking_tag], DOES NOT MATCH '[EC.program.tag]'. \ref[EC.program.tag]"
+						EC.program.tag = copytext(EC.program.tag, 1)
+						docking_tag = copytext(docking_tag, 1)
+						world.log << "Docking Controller and Program tag after copytext '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+						EC.program.tag += "-"
+						docking_tag += "-"
+						world.log << "Docking Controller and Program tag after addition '[docking_tag]', \ref[docking_tag], '[EC.program.tag]'. \ref[EC.program.tag]"
+						EC.program.tag = copytext(EC.program.tag, 1,-1)
+						docking_tag = copytext(docking_tag, 1,-1)
 	shuttle_controller.register_landmark(tag, src)
 
 /obj/effect/shuttle_landmark/proc/is_valid(var/datum/shuttle/shuttle)

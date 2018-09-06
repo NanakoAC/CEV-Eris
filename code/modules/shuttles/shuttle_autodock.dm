@@ -22,6 +22,12 @@
 	//Initial dock
 	active_docking_controller = current_location.docking_controller
 	current_dock_target = get_docking_target(current_location)
+	if (!active_docking_controller || !current_dock_target)
+		world.log << "Autodock shuttle failed to find controller or target: [active_docking_controller], [current_dock_target]"
+		if (istype(current_location))
+			world.log << "We do have a correct location: [current_location], Initialized: [current_location.initialized], Controller: [current_location.docking_controller]"
+	else
+		world.log << "Autodock Found everything just fine and is about to dock: [current_location] [active_docking_controller], [current_dock_target]"
 	dock()
 
 	//Optional transition area

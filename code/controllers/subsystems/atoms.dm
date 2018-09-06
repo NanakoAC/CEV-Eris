@@ -56,7 +56,7 @@ SUBSYSTEM_DEF(atoms)
 		for(var/I in late_loaders)
 			var/atom/A = I
 			A.LateInitialize(arglist(mapload_arg))
-		report_progress("Late initialized [late_loaders.len] atom\s")
+		report_progress("Late initialized [late_loaders.len] atom\s at [world.timeofday]")
 		late_loaders.Cut()
 
 	if(atoms)
