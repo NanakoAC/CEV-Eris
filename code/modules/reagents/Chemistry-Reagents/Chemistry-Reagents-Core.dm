@@ -124,8 +124,9 @@
 			cube.Expand()
 
 /datum/reagent/water/touch_mob(var/mob/living/L, var/amount)
+	world << "Touching mob [L], firestacks [L.fire_stacks]"
 	if(istype(L))
-		var/needed = L.fire_stacks * 10
+		var/needed = L.fire_stacks * 2
 		if(amount > needed)
 			L.fire_stacks = 0
 			L.ExtinguishMob()
@@ -133,6 +134,8 @@
 		else
 			L.adjust_fire_stacks(-(amount / 10))
 			remove_self(amount)
+
+		world << "Burning mob [L] now has [L.fire_stacks]"
 
 /datum/reagent/water/affect_touch(var/mob/living/carbon/M, var/alien, var/removed)
 	if(isslime(M))

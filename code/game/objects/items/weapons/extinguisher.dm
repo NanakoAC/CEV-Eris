@@ -15,8 +15,8 @@
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
 
 	var/spray_particles = 3
-	var/spray_amount = 10	//units of liquid per particle
-	var/max_water = 300
+	var/spray_amount = 5	//units of liquid per particle
+	var/max_water = 500
 	var/last_use = 1.0
 	var/safety = 1
 	var/sprite_name = "fire_extinguisher"
@@ -30,7 +30,7 @@
 	throwforce = WEAPON_FORCE_NORMAL
 	w_class = ITEM_SIZE_SMALL
 	force = WEAPON_FORCE_NORMAL
-	max_water = 150
+	max_water = 250
 	spray_particles = 3
 	sprite_name = "miniFE"
 

@@ -17,21 +17,26 @@
 /obj/effect/effect/water/proc/set_up(var/turf/target, var/step_count = 5, var/delay = 5)
 	if(!target)
 		return
+	world << "water setup"
 	for(var/i = 1 to step_count)
 		if(!loc)
 			return
 		step_towards(src, target)
 		var/turf/T = get_turf(src)
 		if(T && reagents)
+
 			reagents.touch_turf(T)
+			world << "Water touched turf. Remaining. [reagents.total_volume]"
 			var/mob/M
 			for(var/atom/A in T)
 				if(!ismob(A) && A.simulated) // Mobs are handled differently
 					reagents.touch(A)
+					world << "Water touched object. Remaining. [reagents.total_volume]"
 				else if(ismob(A) && !M)
 					M = A
 			if(M)
-				reagents.splash(M, reagents.total_volume)
+				reagents.splash(M, reagents.total_volume, 1,0, 0, 0)
+				world << "Water touched mob. Remaining. [reagents.total_volume]"
 				break
 			if(T == get_turf(target))
 				break

@@ -283,7 +283,7 @@
 //call the appropriate trans_to_*() proc.
 /datum/reagents/proc/trans_to(var/atom/target, var/amount = 1, var/multiplier = 1, var/copy = 0)
 	touch(target) //First, handle mere touch effects
-
+	world << "Done with touch, remaining volume [total_volume]"
 	if(ismob(target))
 		return splash_mob(target, amount, copy)
 	if(isturf(target))
@@ -301,6 +301,7 @@
 	if(spill)
 		splash(target.loc, spill, multiplier, copy, min_spill, max_spill)
 
+	world << "Reagent splash: Spill [spill], amount [amount], volume [total_volume]"
 	//Here we attempt to transfer some reagents to the target. But it can often fail,
 	//like if you try to splash reagents onto an object that isn't an open container
 	if (!trans_to(target, amount, multiplier, copy) && total_volume > 0)
