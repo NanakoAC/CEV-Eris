@@ -31,6 +31,15 @@
 #define slot_legs        21
 #define slot_accessory_buffer         22
 
+//These are used by robots for the equipment they have activated
+//Although we could reuse some of the slots above, this is more future proof
+//These are not bitmasks anyway so there's no upper limit
+#define slot_robot_equip_1	23
+#define slot_robot_equip_2	24
+#define slot_robot_equip_3	25
+
+
+
 // Item inventory slot bitmasks.
 //These are usually hardcoded to define what slots an item CAN equip to
 #define SLOT_OCLOTHING         0x1
@@ -68,7 +77,7 @@
 #define BLOCK_GAS_SMOKE_EFFECT     0x10 // Blocks the effect that chemical clouds would have on a mob -- glasses, mask and helmets ONLY! (NOTE: flag shared with ONESIZEFITSALL)
 #define FLEXIBLEMATERIAL           0x20 // At the moment, masks with this flag will not prevent eating even if they are covering your face.
 #define COVER_PREVENT_MANIPULATION 0x40 // Only clothing with this flag will prevent manipulation under it. Its for space suits and such, unlike from usual Bay12 rules of clothing manipulation.
-
+#define DRAG_AND_DROP_UNEQUIP      0x80 // Allow you put intems in hands with drag and drop
 
 // Flags for pass_flags.
 #define PASSTABLE  0x1

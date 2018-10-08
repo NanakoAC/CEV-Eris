@@ -57,14 +57,26 @@
 			return 1
 	return 1
 
-
-/obj/structure/table/MouseDrop_T(obj/item/O, mob/living/user)
-
-	if(user.get_active_hand() != O)
-		return ..()
-	if(isrobot(user))
+//Drag and drop onto tables
+//This is mainly so that janiborg can put things on tables
+/obj/structure/table/MouseDrop_T(atom/A, mob/user, src_location, over_location, src_control, over_control, params)
+	if(istype(A.loc, /mob))
+		if (user.unEquip(A, loc))
+			set_pixel_click_offset(A, params)
 		return
-	user.unEquip(O, src.loc)
+
+	if (istype(A, /obj/item) && istype(A.loc, /turf) && (A.Adjacent(src) || user.Adjacent(src)))
+		var/obj/item/O = A
+		//Mice can push around pens and paper, but not heavy tools
+		if (O.w_class <= user.can_pull_size)
+			O.forceMove(loc)
+			set_pixel_click_offset(O, params, animate=TRUE)
+			return
+		else
+			user << SPAN_WARNING("[O] is too heavy for you to move!")
+			return
+
+	return ..()
 
 
 /obj/structure/table/affect_grab(var/mob/living/user, var/mob/living/target, var/state)
@@ -103,16 +115,11 @@
 	return TRUE
 
 
+
 /obj/structure/table/attackby(obj/item/W, mob/living/user, var/params)
 	if(!istype(W))
 		return
 
-	// Handle dismantling or placing things on the table from here on.
-	if(isrobot(user))
-		return
-
-	if(W.loc != user) // This should stop mounted modules ending up outside the module.
-		return
 
 	if(istype(W, /obj/item/weapon/melee/energy/blade))
 		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
@@ -128,15 +135,6 @@
 		user << SPAN_WARNING("There's nothing to put \the [W] on! Try adding plating to \the [src] first.")
 		return
 
-	user.unEquip(W, src.loc)
-
-	var/list/click_params = params2list(params)
-	//Center the icon where the user clicked.
-	if(!click_params || !click_params["icon-x"] || !click_params["icon-y"])
-		return
-	//Clamp it so that the icon never moves more than 16 pixels in either direction (thus leaving the table turf)
-	W.pixel_x = Clamp(text2num(click_params["icon-x"]) - 16, -(world.icon_size/2), world.icon_size/2)
-	W.pixel_y = Clamp(text2num(click_params["icon-y"]) - 16, -(world.icon_size/2), world.icon_size/2)
-
-
+	if (user.unEquip(W, loc))
+		set_pixel_click_offset(W, params)
 /obj/structure/table/attack_tk() // no telehulk sorry

@@ -7,19 +7,12 @@ This saves us from having to call add_fingerprint() any time something is put in
 	set name = "quick-equip"
 	set hidden = 1
 
-	if(ishuman(src))
-		var/mob/living/carbon/human/H = src
-		var/obj/item/I = H.get_active_hand()
-		if(!I)
-			H << SPAN_NOTICE("You are not holding anything to equip.")
-			return
-		if(H.equip_to_appropriate_slot(I))
-			if(hand)
-				update_inv_l_hand(0)
-			else
-				update_inv_r_hand(0)
-		else
-			H << "\red You are unable to equip that."
+	var/obj/item/I = get_active_hand()
+	if(!I)
+		src << SPAN_NOTICE("You are not holding anything to equip.")
+		return
+	if(!equip_to_appropriate_slot(I))
+		src << SPAN_WARNING("You are unable to equip that.")
 
 //Puts the item into our active hand if possible. returns 1 on success.
 /mob/living/carbon/human/put_in_active_hand(var/obj/item/W)
@@ -107,9 +100,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 		if(slot_accessory_buffer)
 			return 1
 
-/mob/living/carbon/human/u_equip(obj/W as obj)
-	if(!W)	return 0
-
+/mob/living/carbon/human/u_equip(obj/item/W as obj)
 	if (W == wear_suit)
 		if(s_store)
 			drop_from_inventory(s_store)
@@ -192,15 +183,9 @@ This saves us from having to call add_fingerprint() any time something is put in
 		update_inv_legcuffed()
 	else if (W == r_hand)
 		r_hand = null
-		if(l_hand)
-			l_hand.update_held_icon()
-			update_inv_l_hand()
 		update_inv_r_hand()
 	else if (W == l_hand)
 		l_hand = null
-		if(r_hand)
-			r_hand.update_held_icon()
-			update_inv_l_hand()
 		update_inv_l_hand()
 	else
 		return 0
@@ -229,7 +214,6 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 	if(!slot) return
 	if(!istype(W)) return
-	if(!has_organ_for_slot(slot)) return
 	if(!species || !species.hud || !(slot in species.hud.equip_slots)) return
 	if(ismob(W.loc))
 		var/mob/M = W.loc
@@ -300,8 +284,6 @@ This saves us from having to call add_fingerprint() any time something is put in
 				update_hair(redraw_mob)	//rebuild hair
 				update_inv_ears(0)
 				update_inv_wear_mask(0)
-			if(istype(W,/obj/item/clothing/head/kitty))
-				W.update_icon(src)
 			W.equipped(src, slot)
 			update_inv_head(redraw_mob)
 		if(slot_shoes)
@@ -363,7 +345,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 		if(slot_glasses)
 			covering = src.head
 			check_flags = EYES
-		if(slot_l_ear, slot_r_ear, )
+		if(slot_l_ear, slot_r_ear)
 			covering = src.head
 		if(slot_gloves, slot_w_uniform)
 			covering = src.wear_suit
@@ -371,6 +353,10 @@ This saves us from having to call add_fingerprint() any time something is put in
 	if(covering && (covering.item_flags & COVER_PREVENT_MANIPULATION) && (covering.body_parts_covered & (I.body_parts_covered|check_flags)))
 		user << SPAN_WARNING("\The [covering] is in the way.")
 		return 0
+
+	if (!has_organ_for_slot(slot))
+		return FALSE
+
 	return 1
 
 /mob/living/carbon/human/get_equipped_item(var/slot)
@@ -399,18 +385,18 @@ This saves us from having to call add_fingerprint() any time something is put in
 /mob/living/carbon/human/get_equipped_items(var/include_carried = 0)
 	var/list/items = new/list()
 
-	if(back) items += back
-	if(belt) items += belt
-	if(l_ear) items += l_ear
-	if(r_ear) items += r_ear
-	if(glasses) items += glasses
-	if(gloves) items += gloves
-	if(head) items += head
-	if(shoes) items += shoes
-	if(wear_id) items += wear_id
-	if(wear_mask) items += wear_mask
-	if(wear_suit) items += wear_suit
-	if(w_uniform) items += w_uniform
+	if(back)		items += back
+	if(belt)		items += belt
+	if(l_ear)		items += l_ear
+	if(r_ear)		items += r_ear
+	if(glasses)		items += glasses
+	if(gloves)		items += gloves
+	if(head)		items += head
+	if(shoes)		items += shoes
+	if(wear_id)		items += wear_id
+	if(wear_mask)	items += wear_mask
+	if(wear_suit)	items += wear_suit
+	if(w_uniform)	items += w_uniform
 
 	if(include_carried)
 		if(slot_l_hand)     items += l_hand
@@ -422,3 +408,20 @@ This saves us from having to call add_fingerprint() any time something is put in
 		if(slot_s_store)    items += s_store
 
 	return items
+
+
+//The parent does all the checks, this one is just for feedback messages
+/mob/living/carbon/human/can_pickup(var/obj/item/I, var/feedback = TRUE)
+	.=..()
+
+	if (!. && feedback)
+		//Feedback moved here from item attackhand
+		var/obj/item/organ/external/temp = organs_by_name[BP_R_ARM]
+		if (hand)
+			temp = organs_by_name[BP_L_ARM]
+		if(temp && !temp.is_usable())
+			src << SPAN_NOTICE("You try to move your [temp.name], but cannot!")
+			return
+		if(!temp)
+			src << SPAN_NOTICE("You try to use your hand, but realize it is no longer attached!")
+			return

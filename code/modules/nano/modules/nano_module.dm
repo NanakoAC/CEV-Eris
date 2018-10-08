@@ -20,11 +20,23 @@
 		return TRUE
 	return ..()
 
+/datum/nano_module/proc/get_host_z()
+	var/atom/host = nano_host()
+	return istype(host) ? get_z(host) : 0
+
 /datum/nano_module/nano_host()
 	return host ? host : src
 
 /datum/nano_module/proc/can_still_topic(var/datum/topic_state/state = default_state)
 	return CanUseTopic(usr, state) == STATUS_INTERACTIVE
+
+//Allows computer programs to play sounds from the console
+/datum/nano_module/proc/playsound_host(soundin, vol as num, vary, extrarange as num, falloff, var/is_global, var/use_pressure = TRUE)
+	if (!host)
+		return
+
+	var/turf/T = get_turf(host)
+	playsound(T, soundin, vol, vary, extrarange, falloff, is_global,use_pressure)
 
 /datum/proc/initial_data()
 	return list()

@@ -67,6 +67,7 @@
 #define ROBOT_NOTIFICATION_NEW_NAME 2
 #define ROBOT_NOTIFICATION_NEW_MODULE 3
 #define ROBOT_NOTIFICATION_MODULE_RESET 4
+#define ROBOT_NOTIFICATION_SIGNAL_LOST 5
 
 // Appearance change flags
 #define APPEARANCE_UPDATE_DNA  0x1
@@ -99,6 +100,10 @@
 #define COMPANY_ALIGNMENTS		list(COMPANY_LOYAL, COMPANY_SUPPORTATIVE, COMPANY_NEUTRAL, COMPANY_SKEPTICAL, COMPANY_OPPOSED)
 
 
+// Defines the argument used for get_mobs_and_objs_in_view_fast
+#define GHOSTS_ALL_HEAR 1
+#define ONLY_GHOSTS_IN_VIEW 0
+
 // Defines mob sizes, used by lockers and to determine what is considered a small sized mob, etc.
 #define MOB_LARGE  		40
 #define MOB_MEDIUM 		20
@@ -120,11 +125,19 @@
 #define FLASH_PROTECTION_NONE 0
 #define FLASH_PROTECTION_MODERATE 1
 #define FLASH_PROTECTION_MAJOR 2
-#define ANIMAL_SPAWN_DELAY round(config.respawn_delay / 6)
-#define DRONE_SPAWN_DELAY  round(config.respawn_delay / 3)
 
-#define ANIMAL_SPAWN_DELAY round(config.respawn_delay / 6)
-#define DRONE_SPAWN_DELAY  round(config.respawn_delay / 3)
+
+//Time of Death constants
+//Used with a list in preference datums to track times of death
+#define	CREW 	"crew"//Used for crewmembers, AI, cyborgs, nymphs, antags
+#define ANIMAL	"animal"//Used for mice and any other simple animals
+#define MINISYNTH	"minisynth"//Used for drones and pAIs
+
+#define ANIMAL_SPAWN_DELAY 5 MINUTES
+#define DRONE_SPAWN_DELAY  10 MINUTES
+
+#define CRYOPOD_SPAWN_BONUS	20 MINUTES //Going to sleep in a cryopod takes this much off your respawn time
+
 
 // Incapacitation flags, used by the mob/proc/incapacitated() proc
 #define INCAPACITATION_RESTRAINED 1
@@ -159,3 +172,7 @@
 
 #define ORGAN_HEALTH_MULTIPLIER 1
 #define ORGAN_REGENERATION_MULTIPLIER 0.2
+#define WOUND_BLEED_MULTIPLIER 0.02 //Bleeding wounds drip damage*this units of blood per process tick
+#define OPEN_ORGAN_BLEED_AMOUNT 1.5 //Wounds with open, unclamped incisions bleed this many units of blood per process tick
+
+

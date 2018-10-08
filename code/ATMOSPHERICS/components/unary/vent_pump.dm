@@ -25,7 +25,6 @@
 	var/area_uid
 	var/id_tag = null
 
-	var/hibernate = 0 //Do we even process?
 	var/pump_direction = 1 //0 = siphoning, 1 = releasing
 
 	var/external_pressure_bound = EXTERNAL_PRESSURE_BOUND
@@ -106,7 +105,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/update_icon(var/safety = 0)
 	if(!check_icon_cache())
 		return
-	if (!node)
+	if (!node1)
 		use_power = 0
 
 	overlays.Cut()
@@ -117,7 +116,7 @@
 	if(!istype(T))
 		return
 
-	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
+	if(!T.is_plating() && node1 && node1.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe))
 		vent_icon += "h"
 
 	if(welded)
@@ -135,11 +134,11 @@
 		var/turf/T = get_turf(src)
 		if(!istype(T))
 			return
-		if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
+		if(!T.is_plating() && node1 && node1.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe))
 			return
 		else
-			if(node)
-				add_underlay(T, node, dir, node.icon_connect_type)
+			if(node1)
+				add_underlay(T, node1, dir, node1.icon_connect_type)
 			else
 				add_underlay(T,, dir)
 
@@ -147,35 +146,35 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
-	if(stat & (NOPOWER|BROKEN))
-		return 0
-	if(!use_power)
-		return 0
-	if(welded)
-		return 0
-	return 1
-
 /obj/machinery/atmospherics/unary/vent_pump/Process()
 	..()
 
-	if (hibernate > world.time)
-		return 1
-
-	if (!node)
+	if (!node1)
 		use_power = 0
-	if(!can_pump())
+		return
+
+	if(!use_power)
+		return 0
+
+	if(stat & (NOPOWER|BROKEN))
+		return 0
+
+	if(welded)
 		return 0
 
 	var/datum/gas_mixture/environment = loc.return_air()
+	if (!environment)
+		return 0
 
-	var/power_draw = -1
+	if (!environment.total_moles && !air_contents.total_moles)
+		return 0
 
 	//Figure out the target pressure difference
 	var/pressure_delta = get_pressure_delta(environment)
 	//src.visible_message("DEBUG >>> [src]: pressure_delta = [pressure_delta]")
 
-	if((environment.temperature || air_contents.temperature) && pressure_delta > 0.5)
+	var/power_draw = -1
+	if(pressure_delta > 0.5)
 		if(pump_direction) //internal -> external
 			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
 			power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
@@ -185,13 +184,6 @@
 			//limit flow rate from turfs
 			transfer_moles = min(transfer_moles, environment.total_moles*air_contents.volume/environment.volume)	//group_multiplier gets divided out here
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
-
-	else
-		//If we're in an area that is fucking ideal, and we don't have to do anything, chances are we won't next tick either so why redo these calculations?
-		//JESUS FUCK.  THERE ARE LITERALLY 250 OF YOU MOTHERFUCKERS ON ZLEVEL ONE AND YOU DO THIS SHIT EVERY TICK WHEN VERY OFTEN THERE IS NO REASON TO
-		if(pump_direction && pressure_checks == PRESSURE_CHECK_EXTERNAL) //99% of all vents
-			hibernate = world.time + (rand(100, 200))
-
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw
@@ -265,8 +257,6 @@
 /obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal)
 	if(stat & (NOPOWER|BROKEN))
 		return
-
-	hibernate = 0
 
 	//log_admin("DEBUG \[[world.timeofday]\]: /obj/machinery/atmospherics/unary/vent_pump/receive_signal([signal.debug_print()])")
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
@@ -356,7 +346,7 @@
 
 		if(QUALITY_WELDING)
 			user << SPAN_NOTICE("Now welding the vent.")
-			if(I.use_tool(user, src, WORKTIME_NEAR_INSTANT, tool_type, FAILCHANCE_VERY_EASY, required_stat = STAT_MEC))
+			if(I.use_tool(user, src, WORKTIME_NORMAL, tool_type, FAILCHANCE_VERY_EASY, required_stat = STAT_MEC))
 				if(!welded)
 					user.visible_message(SPAN_NOTICE("\The [user] welds the vent shut."), SPAN_NOTICE("You weld the vent shut."), "You hear welding.")
 					welded = 1
@@ -375,7 +365,7 @@
 				user << SPAN_WARNING("You cannot unwrench \the [src], turn it off first.")
 				return 1
 			var/turf/T = src.loc
-			if (node && node.level==1 && isturf(T) && !T.is_plating())
+			if (node1 && node1.level==1 && isturf(T) && !T.is_plating())
 				user << SPAN_WARNING("You must remove the plating first.")
 				return 1
 			var/datum/gas_mixture/int_air = return_air()

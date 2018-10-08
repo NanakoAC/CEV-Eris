@@ -13,14 +13,14 @@
 /obj/machinery/computer/shuttle_control/research
 	name = "research shuttle control console"
 	shuttle_tag = "Research"
-	//req_access = list(access_research)
+	//req_access = list(access_moebius)
 	circuit = /obj/item/weapon/circuitboard/research_shuttle
 
 /obj/machinery/computer/shuttle_control/merchant
 	name = "merchant shuttle control console"
 	icon_keyboard = "power_key"
 	icon_screen = "shuttle"
-	req_access = list(access_merchant)
+	req_access = list(access_cargo)
 	shuttle_tag = "Merchant"
 
 

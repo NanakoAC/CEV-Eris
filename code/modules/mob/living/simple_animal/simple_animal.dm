@@ -8,11 +8,15 @@
 	mob_swap_flags = MONKEY|SLIME|SIMPLE_ANIMAL
 	mob_push_flags = MONKEY|SLIME|SIMPLE_ANIMAL
 
-	var/show_stat_health = 1	//does the percentage health show in the stat panel for the mob
+	var/show_stat_health = TRUE	//does the percentage health show in the stat panel for the mob
 
 	var/icon_living = ""
 	var/icon_dead = ""
 	var/icon_gib = null	//We only try to show a gibbing animation if this exists.
+
+	//Napping
+	var/can_nap = FALSE
+	var/icon_rest = null
 
 	var/list/speak = list()
 	var/speak_chance = 0
@@ -24,9 +28,9 @@
 	universal_speak = 0		//No, just no.
 	var/meat_amount = 0
 	var/meat_type
-	var/stop_automated_movement = 0 //Use this to temporarely stop random movement or to if you write special movement code for animals.
-	var/wander = 1	// Does the mob wander around when idle?
-	var/stop_automated_movement_when_pulled = 1 //When set to 1 this stops the animal from moving when someone is pulling it.
+	var/stop_automated_movement = FALSE //Use this to temporarely stop random movement or to if you write special movement code for animals.
+	var/wander = TRUE	// Does the mob wander around when idle?
+	var/stop_automated_movement_when_pulled = TRUE //When set to 1 this stops the animal from moving when someone is pulling it.
 
 	//Interaction
 	var/response_help   = "tries to help"
@@ -86,16 +90,6 @@
 /mob/living/simple_animal/Life()
 	..()
 
-	//Health
-	if(stat == DEAD)
-		if(health > 0)
-			icon_state = icon_living
-			dead_mob_list -= src
-			living_mob_list += src
-			stat = CONSCIOUS
-			density = 1
-		return 0
-
 
 	if(health <= 0)
 		death()
@@ -125,6 +119,7 @@
 	if(!client && speak_chance)
 		if(rand(0,200) < speak_chance)
 			visible_emote(emote_see)
+			speak_audio()
 
 	//Atmos
 	var/atmos_suitable = 1
@@ -200,6 +195,12 @@
 	adjustBruteLoss(Proj.damage)
 	return 0
 
+/mob/living/simple_animal/rejuvenate()
+	..()
+	health = maxHealth
+	density = initial(density)
+	update_icons()
+
 /mob/living/simple_animal/attack_hand(mob/living/carbon/human/M as mob)
 	..()
 
@@ -233,35 +234,22 @@
 
 		if(I_HURT)
 			adjustBruteLoss(harm_intent_damage)
+			playsound(src, pick(punch_sound),60,1)
 			M.visible_message("\red [M] [response_harm] \the [src]")
 			M.do_attack_animation(src)
 
 	return
 
 /mob/living/simple_animal/attackby(var/obj/item/O, var/mob/user)
-	if(istype(O, /obj/item/stack/medical))
-		if(stat != DEAD)
-			var/obj/item/stack/medical/MED = O
-			if(health < maxHealth)
-				if(MED.amount >= 1)
-					adjustBruteLoss(-MED.heal_brute)
-					MED.amount -= 1
-					if(MED.amount <= 0)
-						qdel(MED)
-					for(var/mob/M in viewers(src, null))
-						if ((M.client && !( M.blinded )))
-							M.show_message(SPAN_NOTICE("[user] applies the [MED] on [src]."))
-		else
-			user << SPAN_NOTICE("\The [src] is dead, medical items won't bring \him back to life.")
+	if(istype(O, /obj/item/weapon/gripper))
+		return ..(O, user)
+
 	if(meat_type && (stat == DEAD))	//if the animal has a meat, and if it is dead.
 		if(QUALITY_CUTTING in O.tool_qualities)
 			if(O.use_tool(user, src, WORKTIME_NORMAL, QUALITY_CUTTING, FAILCHANCE_NORMAL, required_stat = STAT_BIO))
 				harvest(user)
 	else
-		if(!O.force)
-			visible_message(SPAN_NOTICE("[user] gently taps [src] with \the [O]."))
-		else
-			O.attack(src, user, user.targeted_organ)
+		O.attack(src, user, user.targeted_organ)
 
 /mob/living/simple_animal/hit_with_weapon(obj/item/O, mob/living/user, var/effective_force, var/hit_zone)
 
@@ -357,6 +345,18 @@
 			user.visible_message(SPAN_DANGER("[user] butchers \the [src] messily!"))
 			gib()
 
+//For picking up small animals
+/mob/living/simple_animal/MouseDrop(atom/over_object)
+	if (holder_type)//we need a defined holder type in order for picking up to work
+		var/mob/living/carbon/H = over_object
+		if(!istype(H) || !Adjacent(H))
+			return ..()
+
+		get_scooped(H, usr)
+		return
+	return ..()
+
+
 /mob/living/simple_animal/handle_fire()
 	return
 
@@ -366,3 +366,57 @@
 	return
 /mob/living/simple_animal/ExtinguishMob()
 	return
+
+
+//I wanted to call this proc alert but it already exists.
+//Basically makes the mob pay attention to the world, resets sleep timers, awakens it from a sleeping state sometimes
+/mob/living/simple_animal/proc/poke(var/force_wake = 0)
+	if (stat != DEAD)
+		if (force_wake || (!client && prob(30)))
+			wake_up()
+
+//Puts the mob to sleep
+/mob/living/simple_animal/proc/fall_asleep()
+	if (stat != DEAD)
+		resting = TRUE
+		stat = UNCONSCIOUS
+		canmove = FALSE
+		wander = FALSE
+		walk_to(src,0)
+		update_icons()
+
+//Wakes the mob up from sleeping
+/mob/living/simple_animal/proc/wake_up()
+	if (stat != DEAD)
+		stat = CONSCIOUS
+		resting = FALSE
+		canmove = TRUE
+		wander = TRUE
+		update_icons()
+
+/mob/living/simple_animal/update_icons()
+	if (stat == DEAD)
+		icon_state = icon_dead
+	else if ((stat == UNCONSCIOUS || resting) && icon_rest)
+		icon_state = icon_rest
+	else if (icon_living)
+		icon_state = icon_living
+
+/mob/living/simple_animal/lay_down()
+	set name = "Rest"
+	set category = "Abilities"
+	if (resting)
+		wake_up()
+	else
+		fall_asleep()
+	src << span("notice","You are now [resting ? "resting" : "getting up"]")
+	update_icons()
+
+
+//This is called when an animal 'speaks'. It does nothing here, but descendants should override it to add audio
+/mob/living/simple_animal/proc/speak_audio()
+	return
+
+//Animals are generally good at falling, small ones are immune
+/mob/living/simple_animal/get_fall_damage()
+	return mob_size - 1

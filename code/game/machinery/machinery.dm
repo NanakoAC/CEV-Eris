@@ -53,8 +53,8 @@ Class Procs:
 
    auto_use_power()            'game/machinery/machine.dm'
       This proc determines how power mode power is deducted by the machine.
-      'auto_use_power()' is called by the 'master_controller' game_controller every
-      tick.
+      'auto_use_power()' is called by the 'SSmachines' subsystem every
+      SSmachines tick.
 
       Return Value:
          return:1 -- if object is powered
@@ -90,7 +90,7 @@ Class Procs:
       Called by machine to assign a value to the uid variable.
 
    process()                  'game/machinery/machine.dm'
-      Called by the 'master_controller' once per game tick for each machine that is listed in the 'machines' list.
+      Called by the 'SSmachines' once SSmachines tick for each machine that is listed in the 'machines' list.
 
    securityLevelChanged()
       Automatically triggered when the alarm level changes, does nothing by itself, can be rewritten.
@@ -295,6 +295,8 @@ Class Procs:
 			return 1
 	return 0
 
+
+//Tool qualities are stored in \code\__defines\tools_and_qualities.dm
 /obj/machinery/proc/default_deconstruction(var/obj/item/I, var/mob/user)
 
 	var/tool_type = I.get_tool_type(user, list(QUALITY_PRYING, QUALITY_SCREW_DRIVING))
@@ -358,6 +360,7 @@ Class Procs:
 		return PoolOrNew(/obj/machinery/constructable_frame/machine_frame, loc)
 	if(type == FRAME_VERTICAL)
 		return PoolOrNew(/obj/machinery/constructable_frame/machine_frame/vertical, loc)
+
 
 /obj/machinery/proc/dismantle()
 	var/obj/machinery/constructable_frame/machine_frame/M = create_frame(frame_type)

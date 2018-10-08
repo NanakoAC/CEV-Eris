@@ -22,10 +22,14 @@
 	var/integrated_light_power = 6
 	var/datum/wires/robot/wires
 
+	var/power_efficiency = 1.0
+
+	mob_size = MOB_LARGE
+
 //Icon stuff
 
 	var/icontype 				//Persistent icontype tracking allows for cleaner icon updates
-	var/module_sprites[0] 		//Used to store the associations between sprite names and sprite index.
+	var/list/module_sprites = list() 		//Used to store the associations between sprite names and sprite index.
 	var/icon_selected = 1		//If icon selection has been completed yet
 	var/icon_selection_tries = 0//Remaining attempts to select icon before a selection is forced
 
@@ -67,6 +71,8 @@
 	var/wiresexposed = 0
 	var/locked = 1
 	var/has_power = 1
+	var/death_notified = FALSE
+
 	var/list/req_access = list(access_robotics)
 	var/ident = 0
 	//var/list/laws = list()
@@ -198,7 +204,7 @@
 		return 0
 
 	// Actual amount to drain from cell, using CELLRATE
-	var/cell_amount = amount * CELLRATE
+	var/cell_amount = (amount * CELLRATE)/power_efficiency
 
 	if(cell.charge > cell_amount)
 		// Spam Protection
@@ -247,10 +253,11 @@
 			else
 				icontype = module_sprites[1]
 				icon = 'icons/mob/robots.dmi'
-				src << SPAN_WARNING("Custom Sprite Sheet does not contain a valid icon_state for [ckey]-[modtype]")
+				src << "<span class='warning'>Custom Sprite Sheet does not contain a valid icon_state for [ckey]-[modtype]</span>"
 		else
 			icontype = module_sprites[1]
 		icon_state = module_sprites[icontype]
+
 	updateicon()
 	return module_sprites
 
@@ -258,7 +265,7 @@
 	if(module)
 		return
 	var/list/modules = list()
-	modules.Add(robot_module_types)
+	modules.Add(robot_modules) //This is a global list in robot_modules.dm
 	if((crisis && security_level == SEC_LEVEL_RED) || crisis_override) //Leaving this in until it's balanced appropriately.
 		src << "\red Crisis mode active. Combat module available."
 		modules+="Combat"
@@ -270,9 +277,28 @@
 		return
 
 	var/module_type = robot_modules[modtype]
-	new module_type(src)
+	var/obj/item/weapon/robot_module/RM = new module_type() //Spawn a dummy module to read values from
 
-//	hands.icon_state = lowertext(modtype)
+	switch(alert(src, "[RM.desc] \n \n\
+	Health: [RM.health] \n\
+	Power Efficiency: [RM.power_efficiency*100]%\n\
+	Movement Speed: [RM.speed_factor*100]%",
+	"[modtype] module", "Yes", "No"))
+		if("No")
+			//They changed their mind, abort, abort!
+			QDEL_NULL(RM)
+			modtype = null
+			spawn()
+				pick_module() //Bring up the pick menu again
+			return //And abort out of this
+		if ("Yes")
+			//This time spawn the real module
+			QDEL_NULL(RM)
+			new module_type(src)
+
+	//Fallback incase of runtimes
+	if (RM)
+		QDEL_NULL(RM)
 
 	updatename()
 	recalculate_synth_capacities()
@@ -355,6 +381,14 @@
 		"}
 
 	return dat
+
+/mob/living/silicon/robot/verb/toggle_panel_lock()
+	set name = "Toggle Panel Lock"
+	set category = "Silicon Commands"
+	to_chat(src, "You begin [locked ? "" : "un"]locking your panel.")
+	if(!opened && has_power && do_after(usr, 80) && !opened && has_power)
+		to_chat(src, "You [locked ? "un" : ""]locked your panel.")
+		locked = !locked
 
 /mob/living/silicon/robot/verb/toggle_lights()
 	set category = "Silicon Commands"
@@ -483,6 +517,25 @@
 
 				return
 
+		if (istype(I, /obj/item/weapon/gripper))//Code for allowing cyborgs to use rechargers
+			var/obj/item/weapon/gripper/Gri = I
+			if(!wiresexposed)
+				var/datum/robot_component/cell_component = components["power cell"]
+				if(cell)
+					if (Gri.grip_item(cell, user))
+						cell.update_icon()
+						cell.add_fingerprint(user)
+						user << "You remove \the [cell]."
+						cell = null
+						cell_component.wrapped = null
+						cell_component.installed = 0
+						updateicon()
+				else if(cell_component.installed == -1)
+					if (Gri.grip_item(cell_component.wrapped, user))
+						cell_component.wrapped = null
+						cell_component.installed = 0
+						user << "You remove \the [cell_component.wrapped]."
+
 	var/list/usable_qualities = list(QUALITY_WELDING, QUALITY_PRYING)
 	if((opened && !cell) || (opened && cell))
 		usable_qualities.Add(QUALITY_SCREW_DRIVING)
@@ -528,12 +581,7 @@
 					if(I.use_tool(user, src, WORKTIME_FAST, tool_type, FAILCHANCE_NORMAL, required_stat = STAT_MEC))
 						user << SPAN_NOTICE("You jam the crowbar into the robot and begin levering [mmi].")
 						user << SPAN_NOTICE("You damage some parts of the chassis, but eventually manage to rip out [mmi]!")
-						var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
-						C.l_leg = new/obj/item/robot_parts/l_leg(C)
-						C.r_leg = new/obj/item/robot_parts/r_leg(C)
-						C.l_arm = new/obj/item/robot_parts/l_arm(C)
-						C.r_arm = new/obj/item/robot_parts/r_arm(C)
-						C.updateicon()
+						new /obj/item/robot_parts/robot_suit/with_limbs (loc)
 						new/obj/item/robot_parts/chest(loc)
 						qdel(src)
 						return
@@ -887,7 +935,7 @@
 	. = ..()
 
 	if(module)
-		if(module.type == /obj/item/weapon/robot_module/janitor)
+		if(istype(module, /obj/item/weapon/robot_module/custodial))
 			var/turf/tile = loc
 			if(isturf(tile))
 				tile.clean_blood()
@@ -965,30 +1013,41 @@
 
 	return
 
-/mob/living/silicon/robot/proc/choose_icon(var/triesleft, var/list/module_sprites)
+/mob/living/silicon/robot/proc/choose_icon()
+	set category = "Robot Commands"
+	set name = "Choose Icon"
+
 	if(!module_sprites.len)
 		src << "Something is badly wrong with the sprite selection. Harass a coder."
 		return
+	if (icon_selected == 1)
+		verbs -= /mob/living/silicon/robot/proc/choose_icon
+		return
 
-	icon_selected = 0
-	src.icon_selection_tries = triesleft
+	if (icon_selection_tries == -1)
+		icon_selection_tries = module_sprites.len+1
+
+
 	if(module_sprites.len == 1 || !client)
 		if(!(icontype in module_sprites))
 			icontype = module_sprites[1]
+		if (!client)
+			return
 	else
-		icontype = input("Select an icon! [triesleft ? "You have [triesleft] more chance\s." : "This is your last try."]", "Robot", icontype, null) in module_sprites
+		icontype = input("Select an icon! [icon_selection_tries ? "You have [icon_selection_tries] more chance\s." : "This is your last try."]", "Robot", icontype, null) in module_sprites
 	icon_state = module_sprites[icontype]
 	updateicon()
 
-	if (module_sprites.len > 1 && triesleft >= 1 && client)
+	if (module_sprites.len > 1 && icon_selection_tries >= 0 && client)
 		icon_selection_tries--
 		var/choice = input("Look at your icon - is this what you want?") in list("Yes","No")
 		if(choice=="No")
-			choose_icon(icon_selection_tries, module_sprites)
+			choose_icon()
 			return
 
 	icon_selected = 1
 	icon_selection_tries = 0
+	verbs -= /mob/living/silicon/robot/proc/choose_icon
 	src << "Your icon has been set. You now require a module reset to change it."
 
 /mob/living/silicon/robot/proc/sensor_mode() //Medical/Security HUD controller for borgs
@@ -1014,7 +1073,7 @@
 	if(cell.charge == 0)
 		return 0
 
-	var/power_use = amount * CYBORG_POWER_USAGE_MULTIPLIER
+	var/power_use = (amount * CYBORG_POWER_USAGE_MULTIPLIER) / power_efficiency
 	if(cell.checked_use(CELLRATE * power_use))
 		used_power_this_tick += power_use
 		return 1
@@ -1031,6 +1090,8 @@
 	if(!connected_ai)
 		return
 	switch(notifytype)
+		if(ROBOT_NOTIFICATION_SIGNAL_LOST)
+			connected_ai << "<br><br><span class='notice'>NOTICE - Signal lost: [braintype] [name].</span><br>"
 		if(ROBOT_NOTIFICATION_NEW_UNIT) //New Robot
 			connected_ai << "<br><br><span class='notice'>NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a></span><br>"
 		if(ROBOT_NOTIFICATION_NEW_MODULE) //New Module

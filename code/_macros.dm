@@ -15,6 +15,8 @@
 #define isangel(A) istype(A, /mob/observer/eye/angel)
 
 #define isnewplayer(A) istype(A, /mob/new_player)
+
+#define isbst(A) istype(A, /mob/living/carbon/human/bst)
 //++++++++++++++++++++++++++++++++++++++++++++++
 
 #define isliving(A) istype(A, /mob/living)
@@ -59,7 +61,7 @@
 
 #define isorgan(A) istype(A, /obj/item/organ/external)
 
-
+#define isHUDobj(A) istype(A, /obj/screen)
 
 #define islist(A) istype(A, /list)
 
@@ -67,9 +69,12 @@
 
 #define LAZYADD(L, I) if(!L) { L = list(); } L += I;
 
+// Adds I to L, initalizing L if necessary, if I is not already in L
+#define LAZYDISTINCTADD(L, I) if(!L) { L = list(); } L |= I;
+
 #define to_chat(target, message)                            target << message
 #define to_world(message)                                   world << message
-#define to_world_log(message)                               world.log << message
+#define to_world_log(message)                               log_world(message)
 
 #define any2ref(x) "\ref[x]"
 
@@ -79,3 +84,6 @@
 
 // Spawns multiple objects of the same type
 #define cast_new(type, num, args...) if((num) == 1) { new type(args) } else { for(var/i=0;i<(num),i++) { new type(args) } }
+
+//Makes span tags easier
+#define span(class, text) ("<span class='[class]'>[text]</span>")

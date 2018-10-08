@@ -16,9 +16,30 @@
 	Note that this proc can be overridden, and is in the case of screen objects.
 */
 
+/client/Click(var/atom/target, location, control, params)
+//	if(world.time <= next_click) // Hard check, before anything else, to avoid crashing
+//		return
+
+//	next_click = world.time + 1
+
+//	if(buildmode && !istype(target, /obj/screen))
+//		buildmode.build_click(src.mob, params, target)
+//		return
+	if(!isHUDobj(target) && CH)
+		if(CH.mob_check(mob))
+			if (CH.use_ability(mob,target) && CH.one_use_flag)
+				qdel(CH)// = null
+				return
+		else
+			src << "For some reason you can't use [CH.handler_name] ability"
+			qdel(CH)// = null
+			return
+
+	if(!target.Click(location, control, params))
+		usr.ClickOn(target, params)
+
 /atom/Click(var/location, var/control, var/params) // This is their reaction to being clicked on (standard proc)
-	if(src)
-		usr.ClickOn(src, params)
+	return
 
 /atom/DblClick(var/location, var/control, var/params)
 	if(src)
@@ -94,10 +115,6 @@
 
 	if(W == A) // Handle attack_self
 		W.attack_self(src)
-		if(hand)
-			update_inv_l_hand(0)
-		else
-			update_inv_r_hand(0)
 		return 1
 
 	//Atoms on your person
@@ -109,7 +126,7 @@
 			setMoveCooldown(10) //getting something out of a backpack
 
 		if(W)
-			var/resolved = W.resolve_attackby(A, src)
+			var/resolved = W.resolve_attackby(A, src, params)
 			if(!resolved && A && W)
 				W.afterattack(A, src, 1, params) // 1 indicates adjacency
 		else
@@ -171,11 +188,6 @@
 	return
 
 /mob/living/UnarmedAttack(var/atom/A, var/proximity_flag)
-
-	if(!ticker)
-		src << "You cannot attack people before the game has started."
-		return 0
-
 	if(stat)
 		return 0
 
@@ -313,7 +325,7 @@
 		src << SPAN_WARNING("You're out of energy!  You need food!")
 
 // Simple helper to face what you clicked on, in case it should be needed in more than one place
-/mob/proc/face_atom(var/atom/A)
+/atom/movable/proc/face_atom(var/atom/A)
 	if(!A || !x || !y || !A.x || !A.y) return
 	var/dx = A.x - x
 	var/dy = A.y - y
@@ -328,3 +340,8 @@
 		else		direction = WEST
 	if(direction != dir)
 		facedir(direction)
+
+
+/atom/movable/proc/facedir(var/ndir)
+	set_dir(ndir)
+	return 1

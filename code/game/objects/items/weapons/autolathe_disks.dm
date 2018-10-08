@@ -15,6 +15,15 @@
 	var/category = "Disk"
 	var/license = 10
 
+/obj/item/weapon/disk/autolathe_disk/proc/use_license(var/num = 1)
+	if (license == -1)
+		return TRUE
+
+	if (license >= num)
+		license -= num
+		return TRUE
+
+	return FALSE
 
 /obj/item/weapon/disk/autolathe_disk/blank
 	name = "Blank disk"
@@ -27,13 +36,14 @@
 	icon_state = "guild"
 	license = -1
 
+
 /obj/item/weapon/disk/autolathe_disk/basic/New()
 	recipes = list(
 		/datum/autolathe/recipe/misc/flashlight,
 		/datum/autolathe/recipe/misc/extinguisher,
 		/datum/autolathe/recipe/misc/radio_headset,
 		/datum/autolathe/recipe/misc/radio_bounced,
-		/datum/autolathe/recipe/misc/ashtray_glass,
+		/datum/autolathe/recipe/misc/ashtray,
 		/datum/autolathe/recipe/container/bucket,
 		/datum/autolathe/recipe/container/jar,
 		/datum/autolathe/recipe/container/vial,

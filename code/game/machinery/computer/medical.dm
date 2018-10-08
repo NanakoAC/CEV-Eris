@@ -6,7 +6,7 @@
 	icon_keyboard = "med_key"
 	icon_screen = "medcomp"
 	light_color = COLOR_LIME
-	req_one_access = list(access_medical, access_forensics_lockers)
+	req_one_access = list(access_moebius, access_forensics_lockers)
 	circuit = /obj/item/weapon/circuitboard/med_data
 	var/obj/item/weapon/card/id/scan = null
 	var/authenticated = null
@@ -147,7 +147,7 @@
 				else
 		else
 			dat += text("<A href='?src=\ref[];login=1'>{Log In}</A>", src)
-	user << browse(text("<HEAD><TITLE>Medical Records</TITLE></HEAD><TT>[]</TT>", dat), "window=med_rec")
+	user << browse(russian_to_utf8(text("<HEAD><TITLE>Medical Records</TITLE></HEAD><TT>[]</TT>", dat)), "window=med_rec")
 	onclose(user, "med_rec")
 	return
 

@@ -1,4 +1,4 @@
-var/global/const/base_law_type = /datum/ai_laws/nanotrasen
+var/global/const/base_law_type = /datum/ai_laws/asimov
 
 /datum/ai_law
 	var/law = ""
@@ -227,9 +227,9 @@ var/global/const/base_law_type = /datum/ai_laws/nanotrasen
 		if(law == zeroth_law_borg)
 			continue
 		if(law == zeroth_law)
-			who << SPAN_DANGER("[law.get_index()]. [law.law]")
+			who << SPAN_DANGER("[law.get_index()]. [russian_to_cp1251(law.law)]")
 		else
-			who << "[law.get_index()]. [law.law]"
+			who << "[law.get_index()]. [russian_to_cp1251(law.law)]"
 
 /********************
 *	Stating Laws	*

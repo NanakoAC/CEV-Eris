@@ -2,6 +2,12 @@
 #define ONLY_RETRACT 2
 #define SEAL_DELAY 30
 
+
+#define RIG_SECURITY 1
+#define RIG_AI_OVERRIDE 2
+#define RIG_SYSTEM_CONTROL 4
+#define RIG_INTERFACE_LOCK 8
+#define RIG_INTERFACE_SHOCK 16
 /*
  * Defines the behavior of hardsuits/rigs/power armour.
  */
@@ -17,7 +23,7 @@
 	w_class = ITEM_SIZE_LARGE
 
 	// These values are passed on to all component pieces.
-	armor = list(melee = 40, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor = list(melee = 40, bullet = 35, laser = 35,energy = 35, bomb = 35, bio = 100, rad = 40)
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	siemens_coefficient = 0.2
@@ -77,9 +83,15 @@
 
 	var/emp_protection = 0
 
+	var/rig_wear_slot = slot_back //Changing this allows for rigs that are worn as a belt or a tie or something
+
 	// Wiring! How exciting.
 	var/datum/wires/rig/wires
 	var/datum/effect/effect/system/spark_spread/spark_system
+
+/obj/item/weapon/rig/proc/getCurrentGlasses()
+	if(wearer && visor && visor && visor.vision && visor.vision.glasses && (!helmet || (wearer.head && helmet == wearer.head)))
+		return visor.vision.glasses
 
 /obj/item/weapon/rig/examine()
 	usr << "This is \icon[src][src.name]."
@@ -465,7 +477,7 @@
 	if(module_list.len)
 		data["modules"] = module_list
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, ((src.loc != user) ? ai_interface_path : interface_path), interface_title, 480, 550, state = nano_state)
 		ui.set_initial_data(data)
@@ -558,24 +570,24 @@
 			module.integrated_ai << "[message]"
 			. = 1
 
-/obj/item/weapon/rig/equipped(mob/living/carbon/human/M)
+//Delayed equipping of rigs
+/obj/item/weapon/rig/pre_equip(var/mob/user, var/slot)
+	if (slot == rig_wear_slot)
+		if(seal_delay > 0)
+			user.visible_message("<font color='blue'>[user] starts putting on \the [src]...</font>", "<font color='blue'>You start putting on \the [src]...</font>")
+			if(!do_after(user,seal_delay,src))
+				return 1 //A nonzero return value will cause the equipping operation to fail
+
+
+/obj/item/weapon/rig/equipped(var/mob/user, var/slot)
 	..()
 	if (is_held())
 		remove()
 		return
 
-	if(seal_delay > 0 && istype(M) && M.back == src)
-		M.visible_message("<font color='blue'>[M] starts putting on \the [src]...</font>", "<font color='blue'>You start putting on \the [src]...</font>")
-		if(!do_after(M,seal_delay,src))
-			if(M && M.back == src)
-				if(!M.unEquip(src))
-					return
-			src.forceMove(get_turf(src))
-			return
-
-	if(istype(M) && M.back == src)
-		M.visible_message("<font color='blue'><b>[M] struggles into \the [src].</b></font>", "<font color='blue'><b>You struggle into \the [src].</b></font>")
-		wearer = M
+	if (slot == rig_wear_slot)
+		user.visible_message("<font color='blue'><b>[user] struggles into \the [src].</b></font>", "<font color='blue'><b>You struggle into \the [src].</b></font>")
+		wearer = user
 		wearer.wearing_rig = src
 		update_icon()
 
@@ -624,17 +636,16 @@
 				holder = use_obj.loc
 				if(istype(holder))
 					if(use_obj && check_slot == use_obj)
-						wearer << "<font color='blue'><b>Your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.</b></font>"
 						use_obj.canremove = 1
-						holder.drop_from_inventory(use_obj)
-						use_obj.forceMove(get_turf(src))
-						use_obj.dropped()
+						if (wearer.unEquip(use_obj, src))
+							wearer << "<font color='blue'><b>Your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.</b></font>"
 						use_obj.canremove = 0
-						use_obj.forceMove(src)
+
 
 		else if (deploy_mode != ONLY_RETRACT)
 			if(check_slot && check_slot == use_obj)
 				return
+
 			use_obj.forceMove(wearer)
 			if(!wearer.equip_to_slot_if_possible(use_obj, equip_to, 0, 1))
 				use_obj.forceMove(src)
@@ -717,6 +728,9 @@
 	take_hit((100/severity_class), "electrical pulse", 1)
 
 /obj/item/weapon/rig/proc/shock(mob/user)
+	if (!user)
+		return 0
+
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
 		spark_system.start()
 		if(user.stunned)
@@ -911,6 +925,52 @@
 
 /mob/living/carbon/human/get_rig()
 	return back
+
+
+//Used in random rig spawning for cargo
+//Randomly deletes modules
+/obj/item/weapon/rig/proc/lose_modules(var/probability)
+	for(var/obj/item/rig_module/module in installed_modules)
+		if (probability)
+			qdel(module)
+
+
+//Fiddles with some wires to possibly make the suit malfunction a little
+/obj/item/weapon/rig/proc/misconfigure(var/probability)
+	if (prob(probability))
+		wires.UpdatePulsed(RIG_SECURITY)//Fiddle with access
+	if (prob(probability))
+		wires.UpdatePulsed(RIG_AI_OVERRIDE)//frustrate the AI
+	if (prob(probability))
+		wires.UpdateCut(RIG_SYSTEM_CONTROL)//break the suit
+	if (prob(probability))
+		wires.UpdatePulsed(RIG_INTERFACE_LOCK)
+	if (prob(probability))
+		wires.UpdateCut(RIG_INTERFACE_SHOCK)
+	if (prob(probability))
+		subverted = 1
+
+//Drains, rigs or removes the cell
+/obj/item/weapon/rig/proc/sabotage_cell()
+	if (!cell)
+		return
+
+	if (prob(50))
+		cell.charge = rand(0, cell.charge*0.5)
+	else if (prob(15))
+		cell.rigged = 1
+	else
+		cell = null
+
+//Depletes or removes the airtank
+/obj/item/weapon/rig/proc/sabotage_tank()
+	if (!air_supply)
+		return
+
+	if (prob(70))
+		air_supply.remove_air(air_supply.air_contents.total_moles)
+	else
+		QDEL_NULL(air_supply)
 
 #undef ONLY_DEPLOY
 #undef ONLY_RETRACT

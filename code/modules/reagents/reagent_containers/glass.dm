@@ -31,7 +31,7 @@
 		/obj/item/weapon/grenade/chem_grenade,
 		/mob/living/bot/medbot,
 		/obj/item/weapon/storage/secure/safe,
-		/obj/machinery/iv_drip,
+		/obj/structure/medical_stand,
 		/obj/machinery/disease2/incubator,
 		/obj/machinery/disposal,
 		/mob/living/simple_animal/cow,
@@ -79,17 +79,17 @@
 				return
 
 		if(standard_splash_mob(user, target))
-			return
+			return 1
 		if(standard_dispenser_refill(user, target))
-			return
+			return 1
 		if(standard_pour_into(user, target))
-			return
+			return 1
 
 		if(reagents.total_volume)
 			playsound(src,'sound/effects/Splash_Small_01_mono.ogg',50,1)
 			user << SPAN_NOTICE("You splash the solution onto [target].")
 			reagents.splash(target, reagents.total_volume)
-			return
+			return 1
 
 	attackby(obj/item/weapon/W as obj, mob/user as mob)
 		if(istype(W, /obj/item/weapon/pen) || istype(W, /obj/item/device/lighting/toggleable/flashlight/pen))
@@ -235,12 +235,6 @@
 		qdel(src)
 		return
 	else if(istype(D, /obj/item/weapon/mop))
-		if(reagents.total_volume < 1)
-			user << SPAN_WARNING("\The [src] is empty!")
-		else
-			reagents.trans_to_obj(D, 5)
-			user << SPAN_NOTICE("You wet \the [D] in \the [src].")
-			playsound(loc, 'sound/effects/slosh.ogg', 25, 1)
 		return
 	else
 		return ..()

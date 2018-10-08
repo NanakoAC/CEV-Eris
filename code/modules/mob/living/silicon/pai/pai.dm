@@ -186,7 +186,7 @@
 	medicalActive1 = null
 	medicalActive2 = null
 	medical_cannotfind = 0
-	nanomanager.update_uis(src)
+	SSnano.update_uis(src)
 	usr << SPAN_NOTICE("You reset your record-viewing software.")
 
 /mob/living/silicon/pai/cancel_camera()
@@ -407,8 +407,7 @@
 	if(!istype(H))
 		return
 	H.icon_state = "pai-[icon_state]"
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
+	H.update_wear_icon()
 	return H
 
 /mob/living/silicon/pai/MouseDrop(atom/over_object)

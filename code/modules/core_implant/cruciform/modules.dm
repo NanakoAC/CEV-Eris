@@ -1,57 +1,27 @@
 /datum/core_module/cruciform/implant_type = /obj/item/weapon/implant/core_implant/cruciform
 
-/datum/core_module/cruciform/common/preinstall()
-	implant.remove_modules(CRUCIFORM_COMMON)
-	implant.remove_modules(CRUCIFORM_PRIEST)
-	implant.remove_modules(CRUCIFORM_INQUISITOR)
 
-/datum/core_module/cruciform/common/install()
-	implant.name = "cruciform"
+/datum/core_module/cruciform/red_light/install()
+	implant.icon_state = "cruciform_red"
+	implant.max_power = 80
+	implant.power_regen = 0.8
+
+	if(ishuman(implant.wearer))
+		var/mob/living/carbon/human/H = implant.wearer
+		H.update_implants()
+
+/datum/core_module/cruciform/red_light/uninstall()
 	implant.icon_state = "cruciform_green"
-	implant.power = 50
 	implant.max_power = 50
 	implant.power_regen = 0.5
-	implant.rituals = cruciform_base_rituals
+
 	if(ishuman(implant.wearer))
 		var/mob/living/carbon/human/H = implant.wearer
 		H.update_implants()
 
 
-/datum/core_module/cruciform/priest/preinstall()
-	implant.remove_modules(CRUCIFORM_COMMON)
-	implant.remove_modules(CRUCIFORM_PRIEST)
-	implant.remove_modules(CRUCIFORM_INQUISITOR)
-
-/datum/core_module/cruciform/priest/install()
-	implant.name = "priest cruciform"
-	implant.icon_state = "cruciform_red"
-	implant.power = 70
-	implant.max_power = 70
-	implant.power_regen = 0.7
-	implant.rituals = cruciform_base_rituals + cruciform_priest_rituals
-	if(ishuman(implant.wearer))
-		var/mob/living/carbon/human/H = implant.wearer
-		H.update_implants()
-
-
-/datum/core_module/cruciform/inquisitor
+/datum/core_module/cruciform/uplink
 	var/telecrystals = 15
-
-/datum/core_module/cruciform/inquisitor/preinstall()
-	implant.remove_modules(CRUCIFORM_COMMON)
-	implant.remove_modules(CRUCIFORM_PRIEST)
-	implant.remove_modules(CRUCIFORM_INQUISITOR)
-
-/datum/core_module/cruciform/inquisitor/install()
-	implant.name = "cruciform"
-	implant.icon_state = "cruciform_green"
-	implant.power = 100
-	implant.max_power = 100
-	implant.power_regen = 1
-	implant.rituals = cruciform_base_rituals + cruciform_priest_rituals + inquisitor_rituals
-	if(ishuman(implant.wearer))
-		var/mob/living/carbon/human/H = implant.wearer
-		H.update_implants()
 
 /datum/core_module/cruciform/cloning
 	var/datum/dna/dna = null
@@ -77,7 +47,7 @@
 
 
 /datum/core_module/cruciform/obey/install()
-	var/laws = list("You are slavered. You must obey the laws below.",
+	var/laws = list("You are enslaved. You must obey the laws below.",
 			"Only [user] and persons designated by him are Inquisition agents.",
 			"You may not injure an Inquisition agent or, through inaction, allow an Inquisitor to come to harm.",
 			"You must obey orders given to you by Inquisition agent, except where such orders would conflict with the First Law.",
@@ -104,9 +74,44 @@
 
 /datum/core_module/activatable/cruciform/priest_convert/uninstall()
 	..()
-	implant.add_module(new CRUCIFORM_COMMON)
+	implant.remove_modules(CRUCIFORM_PRIEST)
 
 
 /datum/core_module/activatable/cruciform/obey_activator/set_up()
 	module = new CRUCIFORM_OBEY
 	module.user = user
+
+
+/datum/core_module/cruciform/christianhud
+
+/datum/core_module/cruciform/christianhud/proc/update_crucihud()
+	if(implant.wearer.client)
+		for(var/mob/living/carbon/human/christian in christians)
+			var/image/I = image('icons/mob/hud.dmi', christian, icon_state = "hudcyberchristian", layer = ABOVE_LIGHTING_LAYER)
+			implant.wearer.client.images += I
+		implant.use_power(1)
+		if(implant.power < 1)
+			implant.wearer << SPAN_WARNING("Your cruciform pings. The energy is low.")
+			implant.remove_module(src)
+
+///////////
+
+/datum/core_module/rituals/cruciform
+	implant_type = /obj/item/weapon/implant/core_implant/cruciform
+
+
+/datum/core_module/rituals/cruciform/base/set_up()
+	rituals = subtypesof(/datum/ritual/cruciform/base)+subtypesof(/datum/ritual/targeted/cruciform/base)
+	rituals += subtypesof(/datum/ritual/group/cruciform)
+
+/datum/core_module/rituals/cruciform/priest/set_up()
+	rituals = subtypesof(/datum/ritual/cruciform/priest)+subtypesof(/datum/ritual/targeted/cruciform/priest)
+
+
+
+/datum/core_module/rituals/cruciform/inquisitor/set_up()
+	rituals = subtypesof(/datum/ritual/inquisitor)+subtypesof(/datum/ritual/targeted/inquisitor)
+
+
+/datum/core_module/rituals/cruciform/crusader/set_up()
+	rituals = list()

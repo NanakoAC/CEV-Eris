@@ -9,6 +9,7 @@
 	name = "storage"
 	icon = 'icons/obj/storage.dmi'
 	w_class = ITEM_SIZE_NORMAL
+	item_flags = DRAG_AND_DROP_UNEQUIP
 	var/list/can_hold = new/list() //List of objects which this item can store (if set, it can't store anything else)
 	var/list/cant_hold = new/list() //List of objects which this item can't store (in effect only if can_hold isn't set)
 	var/list/is_seeing = new/list() //List of mobs which are currently seeing the contents of this item's storage
@@ -42,46 +43,10 @@
 	qdel(closer)
 	. = ..()
 
-/obj/item/weapon/storage/MouseDrop(obj/over_object as obj)
-	if(!canremove)
-		return
-
-	if ((ishuman(usr) || issmall(usr)) && !ismouse(usr)) //so monkeys can take off their backpacks -- Urist
-
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
-
-		if(over_object == usr && Adjacent(usr)) // this must come before the screen objects only block
-			src.open(usr)
-			return
-
-		if (!( istype(over_object, /obj/screen) ))
-			return ..()
-
-		//makes sure that the storage is equipped, so that we can't drag it into our hand from miles away.
-		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
-
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
-
-
-		if ((src.loc == usr) && !(istype(over_object, /obj/screen)) && !usr.unEquip(src))
-			return
-
-		if (istype(over_object, /obj/screen/inventory/hand))
-			var/obj/screen/inventory/hand/H = over_object
-			switch(H.slot_id)
-				if(slot_r_hand)
-					usr.u_equip(src)
-					usr.put_in_r_hand(src)
-				if(slot_l_hand)
-					usr.u_equip(src)
-					usr.put_in_l_hand(src)
-
-
-		src.add_fingerprint(usr)
+/obj/item/weapon/storage/MouseDrop(obj/over_object)
+	if(ishuman(usr) && usr == over_object && !usr.incapacitated() && Adjacent(usr))
+		return src.open(usr)
+	return ..()
 
 
 /obj/item/weapon/storage/proc/return_inv()
@@ -280,6 +245,8 @@
 
 	if(user)
 		var/datum/hud/HUDdatum = global.HUDdatums[user.defaultHUD]
+		if (!istype(HUDdatum) || !HUDdatum.ConteinerData || !HUDdatum.ConteinerData.len)
+			return //Something went wrong
 		Xcor = HUDdatum.ConteinerData["Xspace"]
 		Ycor = HUDdatum.ConteinerData["Yspace"]
 		ColCountDatum = HUDdatum.ConteinerData["ColCount"]
@@ -432,9 +399,6 @@
 /obj/item/weapon/storage/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 
-	if(isrobot(user))
-		return //Robots can't interact with storage items.
-
 	if(istype(W, /obj/item/device/lightreplacer))
 		var/obj/item/device/lightreplacer/LP = W
 		var/amt_inserted = 0
@@ -518,7 +482,9 @@
 
 	if(user)
 		if(.)
-			user << SPAN_NOTICE("You put some things in [src].")
+			user.visible_message(SPAN_NOTICE("[user] puts some things in [src]."),SPAN_NOTICE("You put some things in [src]."),SPAN_NOTICE("You hear rustling."))
+			if (src.use_sound)
+				playsound(src.loc, src.use_sound, 50, 1, -5)
 		else
 			user << SPAN_NOTICE("You fail to pick anything up with \the [src].")
 

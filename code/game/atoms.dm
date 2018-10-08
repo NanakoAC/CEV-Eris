@@ -19,7 +19,6 @@
 	var/allow_spin = TRUE
 	var/used_now = FALSE //For tools system, check for it should forbid to work on atom for more than one user at time
 
-	var/list/footstep_sounds = list() // Footsteps sound
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
@@ -273,9 +272,15 @@ its easier to just keep the beam vertical.
 	if(new_dir == old_dir)
 		return FALSE
 
+	for(var/i in src.contents)
+		var/atom/A = i
+		A.container_dir_changed(new_dir)
 	dir = new_dir
 	dir_set_event.raise_event(src, old_dir, new_dir)
 	return TRUE
+
+/atom/proc/container_dir_changed(new_dir)
+	return
 
 /atom/proc/ex_act()
 	return
@@ -513,8 +518,10 @@ its easier to just keep the beam vertical.
 	return !anchored
 
 //Execution by grand piano!
-/atom/movable/proc/get_fall_damage()
+/atom/movable/proc/get_fall_damage(var/turf/from, var/turf/dest)
 	return 42
+
+/atom/movable/proc/fall_impact(var/turf/from, var/turf/dest)
 
 //If atom stands under open space, it can prevent fall, or not
 /atom/proc/can_prevent_fall()
@@ -524,22 +531,23 @@ its easier to just keep the beam vertical.
 // Use for objects performing visible actions
 // message is output to anyone who can see, e.g. "The [src] does something!"
 // blind_message (optional) is what blind people will hear e.g. "You hear something!"
-/atom/proc/visible_message(var/message, var/blind_message)
+/atom/proc/visible_message(var/message, var/blind_message, var/range = world.view)
+	var/turf/T = get_turf(src)
+	var/list/mobs = list()
+	var/list/objs = list()
+	get_mobs_and_objs_in_view_fast(T,range, mobs, objs, ONLY_GHOSTS_IN_VIEW)
 
-	var/list/see = get_mobs_or_objects_in_view(world.view, src) | viewers(get_turf(src), null)
+	for(var/o in objs)
+		var/obj/O = o
+		O.show_message(message,1,blind_message,2)
 
-	for(var/I in see)
-		if(isobj(I))
-			spawn(0)
-				if(I) //It's possible that it could be deleted in the meantime.
-					var/obj/O = I
-					O.show_message( message, 1, blind_message, 2)
-		else if(ismob(I))
-			var/mob/M = I
-			if(M.see_invisible >= invisibility) // Cannot view the invisible
-				M.show_message( message, 1, blind_message, 2)
-			else if (blind_message)
-				M.show_message(blind_message, 2)
+	for(var/m in mobs)
+		var/mob/M = m
+		if(M.see_invisible >= invisibility)
+			M.show_message(message,1,blind_message,2)
+		else if(blind_message)
+			M.show_message(blind_message, 2)
+
 
 // Show a message to all mobs and objects in earshot of this atom
 // Use for objects performing audible actions
@@ -551,22 +559,26 @@ its easier to just keep the beam vertical.
 	var/range = world.view
 	if(hearing_distance)
 		range = hearing_distance
-	var/list/hear = get_mobs_or_objects_in_view(range, src)
+	var/turf/T = get_turf(src)
+	var/list/mobs = list()
+	var/list/objs = list()
+	get_mobs_and_objs_in_view_fast(T,range, mobs, objs, ONLY_GHOSTS_IN_VIEW)
 
-	for(var/I in hear)
-		if(isobj(I))
-			spawn(0)
-				if(I) //It's possible that it could be deleted in the meantime.
-					var/obj/O = I
-					O.show_message( message, 2, deaf_message, 1)
-		else if(ismob(I))
-			var/mob/M = I
-			M.show_message( message, 2, deaf_message, 1)
+	for(var/m in mobs)
+		var/mob/M = m
+		M.show_message(message,2,deaf_message,1)
+	for(var/o in objs)
+		var/obj/O = o
+		O.show_message(message,2,deaf_message,1)
 
 /atom/Entered(var/atom/movable/AM, var/atom/old_loc, var/special_event)
-	if(loc && MOVED_DROP == special_event)
-		AM.forceMove(loc, MOVED_DROP)
-		return CANCEL_MOVE_EVENT
+	if(loc)
+		for(var/i in AM.contents)
+			var/atom/movable/A = i
+			A.entered_with_container(old_loc)
+		if(MOVED_DROP == special_event)
+			AM.forceMove(loc, MOVED_DROP)
+			return CANCEL_MOVE_EVENT
 	return ..()
 
 /turf/Entered(var/atom/movable/AM, var/atom/old_loc, var/special_event)
@@ -574,3 +586,24 @@ its easier to just keep the beam vertical.
 
 /atom/proc/get_footstep_sound()
 	return
+
+/atom/proc/set_density(var/new_density)
+	if(density != new_density)
+		density = !!new_density
+
+//This proc is called when objects are created during the round by players.
+//This allows them to behave differently from objects that are mapped in, adminspawned, or purchased
+/atom/proc/Created()
+	return
+	//Should be called when:
+		//An item is printed at an autolathe or protolathe **COMPLETE**
+		//Item is created at mech fab, organ printer, prosthetics builder, or any other machine which creates things
+		//An item is constructed from sheets or any similar crafting system
+
+	//Should NOT be called when:
+		//An item is mapped in
+		//An item is adminspawned
+		//An item is spawned by events
+		//An item is delivered on the cargo shuttle
+		//An item is purchased or dispensed from a vendor (Those things contain premade items and just release them)
+

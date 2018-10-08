@@ -17,20 +17,25 @@ var/global/list/all_objectives_types = null
 	var/target_amount = 0				//If they are focused on a particular number. Steal objectives have their own counter.
 	var/completed = FALSE				//currently only used for custom objectives.
 
-/datum/objective/New(var/datum/antagonist/new_owner, var/datum/mind/target, var/add_to_list = FALSE)
+/datum/objective/New(var/datum/antagonist/new_owner, var/datum/mind/target)
 	antag = new_owner
-	if(add_to_list)
-		antag.objectives |= src
+	antag.objectives += src
 	if(antag.owner)
 		owner = antag.owner
 	if(!target)
 		find_target()
-	else
-		update_explanation()
+	update_explanation()
 	all_objectives.Add(src)
 	..()
 
 /datum/objective/Destroy()
+	if(antag)
+		antag.objectives -= src
+		antag = null
+	if(owner)
+		owner = null
+	if(target)
+		target = null
 	all_objectives.Remove(src)
 	. = ..()
 
@@ -42,7 +47,7 @@ var/global/list/all_objectives_types = null
 
 /datum/objective/proc/get_targets_list()
 	var/list/possible_targets = list()
-	for(var/datum/mind/possible_target in ticker.minds)
+	for(var/datum/mind/possible_target in SSticker.minds)
 		if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != 2))
 			possible_targets.Add(possible_target)
 	return possible_targets
@@ -83,4 +88,4 @@ var/global/list/all_objectives_types = null
 
 	if(href_list["switch_target"])
 		select_human_target(usr)
-		owner.edit_memory()
+		antag.antagonist_panel()

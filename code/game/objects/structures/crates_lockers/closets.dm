@@ -46,9 +46,13 @@
 /obj/structure/closet/can_prevent_fall()
 	return TRUE
 
-/obj/structure/closet/Initialize()
-	. = ..()
+/obj/structure/closet/Initialize(mapload)
+	..()
 	populate_contents()
+	return mapload ? INITIALIZE_HINT_LATELOAD : INITIALIZE_HINT_NORMAL
+
+/obj/structure/closet/LateInitialize()
+	. = ..()
 	update_icon()
 	hack_require = rand(6,8)
 	if(!opened) // if closed, any item at the crate's loc is put in the contents
@@ -62,6 +66,8 @@
 			content_size += Ceiling(I.w_class/2)
 		if(content_size > storage_capacity-5)
 			storage_capacity = content_size + 5
+
+
 
 /obj/structure/closet/examine(mob/user)
 	if(..(user, 1) && !opened)
@@ -211,7 +217,8 @@
 		user << SPAN_NOTICE("Access Denied")
 
 /obj/structure/closet/AltClick(mob/user as mob)
-	src.togglelock(user)
+	if(Adjacent(user))
+		src.togglelock(user)
 
 /obj/structure/closet/proc/CanToggleLock(var/mob/user, var/obj/item/weapon/card/id/id_card)
 	return allowed(user) || (istype(id_card) && check_access_list(id_card.GetAccess()))
@@ -317,6 +324,11 @@
 
 
 /obj/structure/closet/attackby(obj/item/I, mob/user)
+
+	if (istype(I, /obj/item/weapon/gripper))
+		//Empty gripper attacks will call attack_AI
+		return 0
+
 	if(src.opened)
 		if(istype(I,/obj/item/tk_grab))
 			return 0
@@ -340,14 +352,11 @@
 				SPAN_NOTICE("You hear rustling of clothes.")
 			)
 			return
-		if(isrobot(user))
-			return
-		if(I.loc != user) // This should stop mounted modules ending up outside the module.
-			return
 		usr.unEquip(I, src.loc)
+		return
 	else if(istype(I, /obj/item/weapon/packageWrap))
 		return
-	if(QUALITY_WELDING in I.tool_qualities)
+	else if(QUALITY_WELDING in I.tool_qualities)
 		if(I.use_tool(user, src, WORKTIME_FAST, QUALITY_WELDING, FAILCHANCE_EASY, required_stat = STAT_MEC))
 			welded = !src.welded
 			update_icon()
@@ -459,7 +468,7 @@
 	if(!usr.canmove || usr.stat || usr.restrained())
 		return
 
-	if(ishuman(usr))
+	if(ishuman(usr) || isrobot(usr))
 		src.add_fingerprint(usr)
 		src.toggle(usr)
 	else
@@ -473,7 +482,7 @@
 	if(!usr.canmove || usr.stat || usr.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
 		return
 
-	if(ishuman(usr))
+	if(ishuman(usr) || isrobot(usr))
 		src.add_fingerprint(usr)
 		src.togglelock(usr)
 	else
