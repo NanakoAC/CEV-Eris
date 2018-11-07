@@ -28,6 +28,10 @@
 	hard_drive.store_file(new/datum/computer_file/program/camera_monitor())
 	hard_drive.store_file(new/datum/computer_file/program/records())
 	hard_drive.store_file(new/datum/computer_file/program/wordprocessor())
+
+	hard_drive.store_file(new/datum/computer_file/program/game/sudoku)
+		//Something for paramedics to do while watching the crew monitor
+
 	set_autorun("sensormonitor")
 
 // TODO: enable after baymed AI
@@ -127,6 +131,7 @@
 	//hard_drive.store_file(new/datum/computer_file/program/supply())
 	hard_drive.store_file(new/datum/computer_file/program/records())
 	hard_drive.store_file(new/datum/computer_file/program/wordprocessor())
+	hard_drive.store_file(new/datum/computer_file/program/game/sudoku)
 
 // Offices
 /obj/item/modular_computer/console/preset/civilian/professional/install_default_hardware()
@@ -203,3 +208,4 @@
 	hard_drive.store_file(new/datum/computer_file/program/email_client())
 	hard_drive.store_file(new/datum/computer_file/program/wordprocessor())
 	hard_drive.store_file(new/datum/computer_file/program/library())
+	hard_drive.store_file(new/datum/computer_file/program/game/sudoku)

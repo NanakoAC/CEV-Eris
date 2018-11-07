@@ -1,12 +1,14 @@
 /datum/computer_file/program/game/sudoku
 	filename = "sudoku"					// File name, as shown in the file browser program.
-	filedesc = "Sudoku"				// User-Friendly name. In this case, we will generate a random name in constructor.
+	filedesc = "Sudoku"
 	program_icon_state = "game" //"sudoku"				// Icon state of this program's screen.
+	program_menu_icon = "script"
 	extended_desc = "A game of numbers, logic, and deduction. Popular for centuries to keep the mind sharp."		// A nice description.
 	size = 5								// Size in GQ. Integers only. Smaller sizes should be used for utility/low use programs (like this one), while large sizes are for important programs.
 	requires_ntnet = 0						// This particular program does not require NTNet network conectivity...
 	available_on_ntnet = 1					// ... but we want it to be available for download.
 	nanomodule_path = /datum/nano_module/program/sudoku	// Path of relevant nano module. The nano module is defined further in the file.
+	usage_flags = PROGRAM_ALL
 
 /datum/nano_module/program/sudoku
 	var/list/grid = null
@@ -39,7 +41,7 @@
 	var/collapse = 0
 	var/width = 900
 
-/datum/nano_module/program/sudoku/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 0, var/datum/topic_state/state = default_state)
+/datum/nano_module/program/sudoku/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 0, var/datum/topic_state/state = GLOB.default_state)
 	var/list/data = host.initial_data()
 
 	if (!grid)
@@ -56,7 +58,7 @@
 		message = ""//Displays for one refresh only
 	lastuser = user
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "sudoku.tmpl", "Sudoku", width, 557, state = state)
 		//if(host.update_layout()) // This is necessary to ensure the status bar remains updated along with rest of the UI.
@@ -115,7 +117,7 @@
 	else
 		width = 900
 
-	var/datum/nanoui/ui = nanomanager.get_open_ui(user, src, "main")
+	var/datum/nanoui/ui = SSnano.get_open_ui(user, src, "main")
 	if (ui)
 		ui.close()
 		ui_interact(user, force_open = 1)
