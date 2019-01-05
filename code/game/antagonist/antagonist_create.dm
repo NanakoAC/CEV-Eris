@@ -9,6 +9,7 @@
 
 	owner = target
 	target.antagonist.Add(src)
+	world << "Antag Create 1 [world.time]"
 	if(outer)
 		if(!ispath(mob_path))
 			owner = null
@@ -20,24 +21,27 @@
 			update_antag_mob()
 
 		place_antagonist()
-
+		world << "Antag Create 2 [world.time]"
 		if (appearance_editor)
 			spawn(3)
 				var/mob/living/carbon/human/H = owner.current
 				if(istype(H))
 					H.change_appearance(APPEARANCE_ALL, H.loc, H, TRUE, list("Human"), state = GLOB.z_state)
 
+	world << "Antag Create 3 [world.time]"
 	current_antags.Add(src)
 	special_init()
 
+	world << "Antag Create 4 [world.time]"
 	if(new_faction)
 		new_faction.add_member(src)
 
 	//create_faction()
-
+	world << "Antag Create 5 [world.time]"
 	if(doequip)
 		equip()
 
+	world << "Antag Create 6 [world.time]"
 	if(announce) //why this one is commented? It prevents ai from to be a malf
 		greet()
 
