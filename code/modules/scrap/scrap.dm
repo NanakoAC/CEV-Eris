@@ -14,12 +14,14 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "small"
 	icon = 'icons/obj/structures/scrap/base.dmi'
 	var/obj/item/weapon/storage/internal/updating/loot	//the visible loot
-	var/loot_min = 3
-	var/loot_max = 5
+	var/loot_min = 5
+	var/loot_max = 8
 	var/list/loot_list = list(
 		/obj/random/material,
 		/obj/item/stack/rods/random,
-		/obj/item/weapon/material/shard
+		/obj/item/weapon/material/shard,
+		/obj/random/junk/nondense,
+		/obj/random/rare = 0.5
 	)
 	var/dig_amount = 7
 	var/parts_icon = 'icons/obj/structures/scrap/trash.dmi'
@@ -28,7 +30,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	var/base_spread = 12 //limits on pixel offsets of base pieces
 	var/big_item_chance = 0
 	var/obj/big_item
-	var/list/ways = list("pokes around", "digs through", "rummages through", "goes through","picks through")
+	var/list/ways = list("pokes around in", "searches", "scours", "digs through", "rummages through", "goes through","picks through")
 
 /obj/structure/scrap/proc/make_cube()
 	var/obj/container = new /obj/structure/scrap_cube(loc, loot_max)
@@ -38,8 +40,12 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	. = ..()
 	update_icon(TRUE)
 
+/obj/structure/scrap/examine(var/mob/user)
+	..()
+	to_chat(user, SPAN_NOTICE("You could sift through it with a shoveling tool to uncover more contents"))
+
 /obj/effect/scrapshot
-	name = "This thins shoots scrap everywhere with a delay"
+	name = "This thing shoots scrap everywhere with a delay"
 	desc = "no data"
 	invisibility = 101
 	anchored = 1
@@ -96,7 +102,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 
 	var/amt = rand(loot_min, loot_max)
 	for(var/x in 1 to amt)
-		var/loot_path = pick(loot_list)
+		var/loot_path = pickweight(loot_list)
 		new loot_path(src)
 
 	for(var/obj/item/loot in contents)
@@ -175,7 +181,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	I.pixel_x = rand(-base_spread,base_spread)
 	I.pixel_y = rand(-base_spread,base_spread)
 	var/matrix/M = matrix()
-	M.Turn(pick(0,90.180,270))
+	M.Turn(pick(0,90,180,270))
 	I.transform = M
 	return I
 
@@ -203,13 +209,13 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 		underlays |= I
 
 /obj/structure/scrap/proc/hurt_hand(mob/user)
-	if(prob(50))
+	if(prob(15))
 		if(!ishuman(user))
 			return FALSE
 		var/mob/living/carbon/human/victim = user
 		if(victim.species.flags & NO_MINOR_CUT)
 			return FALSE
-		if(victim.gloves)
+		if(victim.gloves && prob(90))
 			return FALSE
 		var/obj/item/organ/external/BP = victim.get_organ(victim.hand ? BP_L_ARM : BP_R_ARM)
 		if(!BP)
@@ -219,7 +225,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 		to_chat(user, "<span class='danger'>Ouch! You cut yourself while picking through \the [src].</span>")
 		BP.take_damage(5, null, TRUE, TRUE, "Sharp debris")
 		victim.reagents.add_reagent("toxin", pick(prob(50);0,prob(50);5,prob(10);10,prob(1);25))
-		if(victim.species.flags[NO_PAIN]) // So we still take damage, but actually dig through.
+		if(victim.species.flags & NO_PAIN) // So we still take damage, but actually dig through.
 			return FALSE
 		return TRUE
 	return FALSE
@@ -230,7 +236,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 		return
 	try_make_loot()
 	loot.open(user)
-	playsound(src, "rummage", 70, 1)
+	playsound(src, "rummage", 50, 1)
 	..()
 
 /obj/structure/scrap/attack_generic(mob/user)
@@ -240,26 +246,32 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 /obj/structure/scrap/MouseDrop(obj/over_object)
 	..(over_object)
 
-/obj/structure/scrap/proc/dig_out_lump(newloc = loc, var/hard_dig = 0)
-	dig_amount--
-	if(dig_amount <= 0)
-		visible_message("<span class='notice'>\The [src] is cleared out!</span>")
-		if(!hard_dig && big_item)
-			big_item.forceMove(get_turf(src))
-			big_item = null
-		qdel(src)
-		return FALSE
-	else
-		new /obj/item/weapon/scrap_lump(newloc)
+/obj/structure/scrap/proc/dig_out_lump(newloc = loc)
+	if(dig_amount > 0)
+		dig_amount--
+		new /obj/item/weapon/scrap_lump(src)
 		return TRUE
+
+
+/obj/structure/scrap/proc/clear_if_empty()
+	if (!contents.len && dig_amount <= 0)
+		clear()
+
+/obj/structure/scrap/proc/clear()
+	visible_message("<span class='notice'>\The [src] is cleared out!</span>")
+	if(big_item)
+		big_item.forceMove(get_turf(src))
+		big_item = null
+	qdel(src)
 
 /obj/structure/scrap/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	if((QUALITY_SHOVELING in W.tool_qualities) && W.use_tool(user, src, WORKTIME_NORMAL, QUALITY_SHOVELING, FAILCHANCE_VERY_EASY, required_stat = STAT_ROB, forced_sound = "rummage"))
 		user.visible_message(SPAN_NOTICE("[user] [pick(ways)] \the [src]."))
 		user.do_attack_animation(src)
-		shuffle_loot()
 		dig_out_lump(user.loc, 0)
+		shuffle_loot()
+		clear_if_empty()
 
 /obj/structure/scrap/large
 	name = "large scrap pile"
@@ -279,13 +291,11 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	desc = "Pile of medical refuse. They sure don't cut expenses on these. "
 	parts_icon = 'icons/obj/structures/scrap/medical_trash.dmi'
 	loot_list = list(
-		/obj/random/medical,
-		/obj/random/medical,
-		/obj/random/medical,
-		/obj/random/medical,
+		/obj/random/medical = 4,
 		/obj/random/surgery_tool,
 		/obj/item/stack/rods/random,
-		/obj/item/weapon/material/shard
+		/obj/item/weapon/material/shard,
+		/obj/random/rare = 0.5
 	)
 
 /obj/structure/scrap/vehicle
@@ -294,15 +304,15 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	desc = "Pile of used machinery. You could use tools from this to build something."
 	parts_icon = 'icons/obj/structures/scrap/vehicle.dmi'
 	loot_list = list(
-		/obj/random/techpart,
-		/obj/random/techpart,
+		/obj/random/techpart = 2,
 		/obj/random/powercell,
-		/obj/random/tool,
-		/obj/random/tool,
+		/obj/random/tool = 2,
 		/obj/random/pouch,
 		/obj/item/stack/material/steel/random,
 		/obj/item/stack/rods/random,
-		/obj/item/weapon/material/shard
+		/obj/item/weapon/material/shard,
+		/obj/random/rare = 0.5,
+		/obj/random/tool_upgrade
 	)
 
 /obj/structure/scrap/food
@@ -311,14 +321,12 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	desc = "Pile of thrown away food. Someone sure have lots of spare food while children on Mars are starving."
 	parts_icon = 'icons/obj/structures/scrap/food_trash.dmi'
 	loot_list = list(
-		/obj/random/junkfood,
-		/obj/random/junkfood,
-		/obj/random/junkfood,
-		/obj/random/junkfood,
+		/obj/random/junkfood = 5,
 		/obj/random/junkfood,
 		/obj/random/booze,
 		/obj/item/stack/rods/random,
-		/obj/item/weapon/material/shard
+		/obj/item/weapon/material/shard,
+		/obj/random/rare = 0.5
 	)
 
 /obj/structure/scrap/guns
@@ -327,15 +335,15 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	desc = "Pile of military supply refuse. Who thought it was a clever idea to throw that out?"
 	parts_icon = 'icons/obj/structures/scrap/guns_trash.dmi'
 	loot_list = list(
-		/obj/random/gun_cheap,
-		/obj/random/gun_cheap,
+		/obj/random/gun_cheap = 2,
 		/obj/random/gun_normal,
 		/obj/random/powercell,
 		/obj/random/gun_energy_cheap,
 		/obj/item/toy/crossbow,
 		/obj/item/weapon/material/shard,
 		/obj/item/stack/material/steel/random,
-		/obj/item/stack/rods/random
+		/obj/item/stack/rods/random,
+		/obj/random/rare = 0.5
 	)
 
 /obj/structure/scrap/science
@@ -346,7 +354,9 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	loot_list = list(
 		/obj/random/techpart,
 		/obj/random/powercell,
-		/obj/random/circuitboard
+		/obj/random/circuitboard,
+		/obj/random/rare = 0.5,
+		/obj/random/tool_upgrade
 	)
 
 /obj/structure/scrap/cloth
@@ -354,7 +364,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	name = "cloth pile"
 	desc = "Pile of second hand clothing for charity."
 	parts_icon = 'icons/obj/structures/scrap/cloth.dmi'
-	loot_list = list(/obj/random/cloth/random_cloth)
+	loot_list = list(/obj/random/cloth/random_cloth,/obj/random/rare = 0.2)
 
 /obj/structure/scrap/poor
 	icontype = "poor"
@@ -362,12 +372,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	desc = "Pile of mixed rubbish. Useless and rotten, mostly."
 	parts_icon = 'icons/obj/structures/scrap/all_mixed.dmi'
 	loot_list = list(
-		/obj/random/lowkeyrandom,
-		/obj/random/lowkeyrandom,
-		/obj/item/stack/rods/random,
-		/obj/item/stack/rods/random,
-		/obj/item/stack/rods/random,
-		/obj/item/weapon/material/shard
+		/obj/random/lowkeyrandom = 2,
+		/obj/item/stack/rods/random = 3,
+		/obj/item/weapon/material/shard,
+		/obj/random/rare = 0.4
 	)
 
 /obj/structure/scrap/poor/large

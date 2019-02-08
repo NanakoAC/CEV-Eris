@@ -5,7 +5,7 @@
 /obj/proc/make_old()
 	color = pick("#996633", "#663300", "#666666")
 	light_color = color
-	name = pick("old ", "expired ", "dirty ", "frayed ", "beaten ", "ancient ", "tarnished ") + initial(name)
+	name = pick("old ", "worn", "rusted", "weathered", "expired ", "dirty ", "frayed ", "beaten ", "ancient ", "tarnished ") + initial(name)
 	desc += pick("\nWarranty has expired.", "\nThe inscriptions on this thing were erased by time.", "\nLooks completely wasted.")
 
 	germ_level = pick(80,110,160)
@@ -53,6 +53,10 @@
 	reagents.add_reagent("toxin", rand(0, actual_volume - reagents.total_volume))
 	..()
 
+//Sealed survival food, always edible
+/obj/item/weapon/reagent_containers/food/snacks/liquidfood/make_old()
+	return
+
 /obj/item/ammo_magazine/make_old()
 	var/del_count = rand(0,contents.len)
 	for(var/i = 1 to del_count)
@@ -63,7 +67,7 @@
 
 /obj/item/weapon/cell/make_old()
 	charge = min(charge, rand_between(0, maxcharge))
-	if(prob(20))
+	if(prob(10))
 		rigged = TRUE
 		if(prob(80))
 			charge = maxcharge  //make it BOOM hard
@@ -124,7 +128,7 @@
 	if(prob(60))
 		add_blood()
 	if(prob(60)) // I mean, the thing is ew gross.
-		equip_delay += rand(0, 2 SECONDS)
+		equip_delay += rand(0, 6 SECONDS)
 	..()
 
 /obj/item/weapon/aiModule/broken
