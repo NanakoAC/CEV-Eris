@@ -3,9 +3,11 @@
 	// var/crit_fail = FALSE // In theory should make the item fail horifically, currently only used in vending.dm
 
 /obj/proc/make_old()
-	color = pick("#996633", "#663300", "#666666")
+	if (oldified)
+		return
+	color = pick("#AA7744", "#774411", "#777777")
 	light_color = color
-	name = pick("old ", "worn", "rusted", "weathered", "expired ", "dirty ", "frayed ", "beaten ", "ancient ", "tarnished ") + initial(name)
+	name = "[pick("old", "worn", "rusted", "weathered", "expired", "dirty", "frayed", "beaten", "ancient", "tarnished")] [initial(name)]"
 	desc += pick("\nWarranty has expired.", "\nThe inscriptions on this thing were erased by time.", "\nLooks completely wasted.")
 
 	germ_level = pick(80,110,160)
@@ -14,11 +16,7 @@
 		sub_item.make_old()
 
 	oldified = TRUE
-	/*
-	If anyone ever wants to make a system of critical failures based on oldifying of an item, feel free. ~Luduk.
-	if(prob(50))
-		crit_fail = TRUE
-	*/
+
 
 	update_icon()
 
@@ -30,7 +28,7 @@
 
 /obj/item/weapon/tool/make_old()
 	..()
-	unreliability += rand(1, 5) * degradation
+	unreliability += rand(40, 100) * degradation
 
 /obj/item/weapon/storage/make_old()
 	var/del_count = rand(0, contents.len)
@@ -83,6 +81,10 @@
 
 /obj/item/stack/rods/make_old()
 	return
+
+/obj/item/weapon/grenade/make_old()
+	..()
+	det_time = rand_between(0, det_time)
 
 /obj/item/weapon/tank/make_old()
 	air_contents.remove(pick(0.2, 0.4 ,0.6, 0.8))
@@ -238,3 +240,147 @@
 
 /obj/effect/decal/mecha_wreckage/make_old()
 	salvage_num = max(1, salvage_num - pick(1, 2, 3))
+
+
+/obj/mecha/make_old()
+	//Now we determine the exosuit's condition
+	switch (rand(0,100))
+		if (0 to 3)
+		//Perfect condition, it was well cared for and put into storage in a pristine state
+		//Nothing is done to it.
+		if (4 to 10)
+		//Poorly maintained.
+		//The internal airtank and power cell will be somewhat depleted, otherwise intact
+			var/P = rand(0,50)
+			P /= 100
+			if (cell)//Set the cell to a random charge below 50%
+				cell.charge =  cell.maxcharge * P
+
+			P = rand(50,100)
+			P /= 100
+			if(internal_tank)//remove 50-100% of airtank contents
+				internal_tank.air_contents.remove(internal_tank.air_contents.total_moles * P)
+
+
+		if (11 to 20)
+		//Wear and tear
+		//Hull has light to moderate damage, tank and cell are depleted
+		//Any equipment will have a 25% chance to be lost
+			var/P = rand(0,30)
+			P /= 100
+			if (cell)//Set the cell to a random charge below 50%
+				cell.charge =  cell.maxcharge * P
+
+			P = rand(70,100)
+			P /= 100
+			if(internal_tank)//remove 50-100% of airtank contents
+				internal_tank.air_contents.remove(internal_tank.air_contents.total_moles * P)
+
+			lose_equipment(25)//Lose modules
+
+			P = rand(10,100)//Set hull integrity
+			P /= 100
+			health = initial(health)*P
+
+
+		if (21 to 40)
+		//Severe damage
+		//Power cell has 50% chance to be missing or is otherwise low
+		//Significant chance for internal damage
+		//Hull integrity less than half
+		//Each module has a 50% loss chance
+		//Systems may be misconfigured
+			var/P
+
+			if (prob(50))//Remove cell
+				cell = null
+			else
+				P = rand(0,20)//or deplete it
+				P /= 100
+				if (cell)//Set the cell to a random charge below 50%
+					cell.charge = cell.maxcharge * P
+
+			P = rand(80,100)
+			P /= 100//Deplete tank
+			if(internal_tank)//remove 50-100% of airtank contents
+				internal_tank.air_contents.remove(internal_tank.air_contents.total_moles * P)
+
+			lose_equipment(50)//Lose modules
+			random_internal_damage(15)//Internal damage
+
+			P = rand(5,50)//Set hull integrity
+			P /= 100
+			health = initial(health)*P
+			misconfigure_systems(15)
+
+
+		if (41 to 80)
+		//Decomissioned
+		//The exosuit is a writeoff, it was tossed into storage for later scrapping.
+		//Wasnt considered worth repairing, but you still can
+		//Power cell missing, internal tank completely drained or ruptured/
+		//65% chance for each type of internal damage
+		//90% chance to lose each equipment
+		//System settings will be randomly configured
+			var/P
+			if (prob(15))
+				cell.rigged = 1//Powercell will explode if you use it
+			else if (prob(50))//Remove cell
+				cell = null
+
+			if (cell)
+				P = rand(0,20)//or deplete it
+				P /= 100
+				if (cell)//Set the cell to a random charge below 50%
+					cell.charge =  cell.maxcharge * P
+
+			lose_equipment(90)//Lose modules
+			random_internal_damage(50)//Internal damage
+
+			if (!hasInternalDamage(MECHA_INT_TANK_BREACH))//If the tank isn't breaches
+				qdel(internal_tank)//Then delete it
+				internal_tank = null
+
+			P = rand(5,50)//Set hull integrity
+			P /= 100
+			health = initial(health)*P
+			misconfigure_systems(45)
+
+
+		if (81 to 100)
+		//Salvage
+		//The exosuit is wrecked. Spawns a wreckage object instead of a suit
+			//Set the noexplode var so it doesn't explode, then just qdel it
+			//The destroy proc handles wreckage generation
+			noexplode = 1
+			qdel(src)
+
+	//Finally, so that the exosuit seems like it's been in storage for a while
+	//We will take any malfunctions to their logical conclusion, and set the error states high
+
+	//If the tank has a breach, then there will be no air left
+	if (hasInternalDamage(MECHA_INT_TANK_BREACH) && internal_tank)
+		internal_tank.air_contents.remove(internal_tank.air_contents.total_moles)
+
+	//If there's an electrical fault, the cell will be complerely drained
+	if (hasInternalDamage(MECHA_INT_SHORT_CIRCUIT) && cell)
+		cell.charge = 0
+
+
+	//Code for interacting with damage+power warnings, an unported aurora feature
+	/*
+	process_warnings()//Trigger them first, if they'll happen
+
+	if (power_alert_status)
+		last_power_warning = -99999999
+		//Make it go into infrequent warning state instantly
+		power_warning_delay = 99999999
+		//and set the delay between warnings to a functionally infinite value
+		//so that it will shut up
+
+	if (damage_alert_status)
+		last_damage_warning = -99999999
+		damage_warning_delay = 99999999
+
+	process_warnings()
+	*/

@@ -15,7 +15,15 @@
 				/obj/structure/reagent_dispensers/watertank = 6,\
 				/obj/structure/largecrate = 2,\
 				/obj/structure/ore_box = 2,\
-				/obj/structure/dispenser/oxygen = 1))
+				/obj/structure/dispenser/oxygen = 1,
+				/obj/random/mecha = 0.01,
+				/obj/random/mecha/damaged = 0.4,
+				/obj/random/scrap/moderate_weighted = 8))
+
+/obj/random/structures/rare/item_to_spawn()
+	return pickweight(list(/obj/random/mecha = 0.01,
+				/obj/random/mecha/damaged = 0.5,
+				/obj/random/closet/rare = 1))
 
 /obj/random/structures/low_chance
 	name = "low chance random structures"
@@ -28,5 +36,4 @@
 
 /obj/random/structure_pack/item_to_spawn()
 	return pick(/obj/random/structures,
-				/obj/random/closet,
-				/obj/random/scrap)
+				/obj/random/closet)

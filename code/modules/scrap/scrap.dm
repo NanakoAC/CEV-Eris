@@ -14,8 +14,8 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "small"
 	icon = 'icons/obj/structures/scrap/base.dmi'
 	var/obj/item/weapon/storage/internal/updating/loot	//the visible loot
-	var/loot_min = 5
-	var/loot_max = 8
+	var/loot_min = 4
+	var/loot_max = 9
 	var/list/loot_list = list(
 		/obj/random/material,
 		/obj/item/stack/rods/random,
@@ -23,12 +23,12 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 		/obj/random/junk/nondense,
 		/obj/random/rare = 0.5
 	)
-	var/dig_amount = 7
+	var/dig_amount = 4
 	var/parts_icon = 'icons/obj/structures/scrap/trash.dmi'
 	var/base_min = 5	//min and max number of random pieces of base icon
 	var/base_max = 8
 	var/base_spread = 12 //limits on pixel offsets of base pieces
-	var/big_item_chance = 0
+	var/big_item_chance = 40
 	var/obj/big_item
 	var/list/ways = list("pokes around in", "searches", "scours", "digs through", "rummages through", "goes through","picks through")
 
@@ -41,8 +41,11 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	update_icon(TRUE)
 
 /obj/structure/scrap/examine(var/mob/user)
-	..()
+	.=..()
+	try_make_loot() //Make the loot when examined so the big item check below will work
 	to_chat(user, SPAN_NOTICE("You could sift through it with a shoveling tool to uncover more contents"))
+	if (big_item && big_item.loc == src)
+		to_chat(user, SPAN_DANGER("You can make out the corners of something large buried in here. Keep digging and removing things to uncover it"))
 
 /obj/effect/scrapshot
 	name = "This thing shoots scrap everywhere with a delay"
@@ -87,7 +90,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 /obj/structure/scrap/proc/make_big_loot()
 	if(prob(big_item_chance))
 		var/obj/randomcatcher/CATCH = new /obj/randomcatcher(src)
-		big_item = CATCH.get_item(/obj/random/structure_pack)
+		if (prob(33))
+			big_item = CATCH.get_item(/obj/random/structures/rare)
+		else
+			big_item = CATCH.get_item(/obj/random/structure_pack)
 		big_item.forceMove(src)
 		if(prob(66))
 			big_item.make_old()
@@ -186,6 +192,9 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	return I
 
 /obj/structure/scrap/update_icon(rebuild_base=0)
+	if(clear_if_empty())
+		return
+
 	if(rebuild_base)
 		var/ID = rand(40)
 		if(!GLOB.scrap_base_cache["[icontype][icon_state][ID]"])
@@ -207,6 +216,8 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 		var/image/I = image(big_item.icon,big_item.icon_state)
 		I.color = big_item.color
 		underlays |= I
+
+
 
 /obj/structure/scrap/proc/hurt_hand(mob/user)
 	if(prob(15))
@@ -243,30 +254,34 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	loot.open(user)
 	..()
 
-/obj/structure/scrap/MouseDrop(obj/over_object)
-	..(over_object)
 
 /obj/structure/scrap/proc/dig_out_lump(newloc = loc)
 	if(dig_amount > 0)
 		dig_amount--
-		new /obj/item/weapon/scrap_lump(src)
+		//new /obj/item/weapon/scrap_lump(src) //Todo: uncomment this once purposes and machinery for scrap are implemented
 		return TRUE
 
 
 /obj/structure/scrap/proc/clear_if_empty()
-	if (!contents.len && dig_amount <= 0)
+	if (dig_amount <= 0)
+		for (var/obj/item/i in contents)
+			if (i != big_item && i != loot) //These two dont stop the pile from being cleared
+				return FALSE
 		clear()
+		return TRUE
+	return FALSE
 
 /obj/structure/scrap/proc/clear()
 	visible_message("<span class='notice'>\The [src] is cleared out!</span>")
 	if(big_item)
+		visible_message("<span class='notice'>\A hidden [big_item] is uncovered from beneath the [src]!</span>")
 		big_item.forceMove(get_turf(src))
 		big_item = null
 	qdel(src)
 
 /obj/structure/scrap/attackby(obj/item/W, mob/user)
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
-	if((QUALITY_SHOVELING in W.tool_qualities) && W.use_tool(user, src, WORKTIME_NORMAL, QUALITY_SHOVELING, FAILCHANCE_VERY_EASY, required_stat = STAT_ROB, forced_sound = "rummage"))
+	if((W.has_quality(QUALITY_SHOVELING)) && W.use_tool(user, src, WORKTIME_NORMAL, QUALITY_SHOVELING, FAILCHANCE_VERY_EASY, required_stat = STAT_ROB, forced_sound = "rummage"))
 		user.visible_message(SPAN_NOTICE("[user] [pick(ways)] \the [src]."))
 		user.do_attack_animation(src)
 		dig_out_lump(user.loc, 0)
@@ -280,7 +295,7 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
+	dig_amount = 6
 	base_min = 9
 	base_max = 14
 	base_spread = 16
@@ -385,10 +400,9 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
-	big_item_chance = 40
+	big_item_chance = 75
 
 /obj/structure/scrap/vehicle/large
 	name = "large industrial debris pile"
@@ -397,11 +411,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 100
 
 /obj/structure/scrap/food/large
 	name = "large food trash pile"
@@ -410,11 +423,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 50
 
 /obj/structure/scrap/medical/large
 	name = "large medical refuse pile"
@@ -423,11 +435,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 60
 
 /obj/structure/scrap/guns/large
 	name = "large gun refuse pile"
@@ -436,11 +447,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 15
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 50
 
 /obj/structure/scrap/science/large
 	name = "large scientific trash pile"
@@ -449,11 +459,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 10
 	loot_max = 20
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 80
 
 /obj/structure/scrap/cloth/large
 	name = "large cloth pile"
@@ -462,11 +471,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	icon_state = "big"
 	loot_min = 8
 	loot_max = 14
-	dig_amount = 15
 	base_min = 9
 	base_max = 14
 	base_spread = 16
-	big_item_chance = 33
+	big_item_chance = 65
 
 /obj/structure/scrap/poor/structure
 	name = "large mixed rubbish"
@@ -480,21 +488,10 @@ GLOBAL_LIST_EMPTY(scrap_base_cache)
 	base_max = 6
 	big_item_chance = 100
 
-//obj/structure/scrap/poor/structure/atom_init() //removed big loot generation from structure scrap
-//	make_big_loot()
-//	..()
-//	return INITIALIZE_HINT_LATELOAD
-//
-//obj/structure/scrap/poor/structure/atom_init_late()
-//	make_big_loot()
+
 
 /obj/structure/scrap/poor/structure/update_icon() //make big trash icon for this
 	..()
 	if(!loot_generated)
 		underlays += image(icon, icon_state = "underlay_big")
-
-/obj/structure/scrap/poor/structure/make_big_loot()
-	..()
-	if(big_item)
-		visible_message("<span class='notice'>\The [src] reveals [big_item] underneath the trash!</span>")
 
