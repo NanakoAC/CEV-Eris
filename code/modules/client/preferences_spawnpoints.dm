@@ -7,18 +7,18 @@
 	ASSERT(name)
 	var/error = FALSE
 	if(late)
-		if(GLOB.late_spawntypes[name])	
+		if(GLOB.late_spawntypes[name])
 			return GLOB.late_spawntypes[name]
 		else
 			error = TRUE
-	if(GLOB.spawntypes[name])	
+	if(GLOB.spawntypes[name])
 		return GLOB.spawntypes[name]
 	else
 		error = TRUE
 	if(error && !silenced)
 		error("Trying to get non existing spawnpoint with name \"[name]\".")
 	return null
-	
+
 
 /proc/createSpawnPoint(name, late = FALSE)
 	ASSERT(name)
