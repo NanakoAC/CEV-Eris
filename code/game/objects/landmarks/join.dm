@@ -6,7 +6,7 @@ GLOBAL_LIST_EMPTY(spawntypes)
 
 /obj/landmark/join/New()
 	if(join_tag)
-		var/datum/spawnpoint/SP = getSpawnPoint(name, item_flags & SILENT = TRUE)
+		var/datum/spawnpoint/SP = getSpawnPoint(name, TRUE)
 		if (!SP)
 			SP = createSpawnPoint(name)
 			SP.turfs += src.loc
@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(spawntypes)
 
 /obj/landmark/join/late/New()
 	if(join_tag)
-		var/datum/spawnpoint/SP = getSpawnPoint(name, late = TRUE, item_flags & SILENT = TRUE)
+		var/datum/spawnpoint/SP = getSpawnPoint(name, TRUE)
 		if (!SP)
 			SP = createSpawnPoint(name, late = TRUE)
 			SP.turfs += src.loc
