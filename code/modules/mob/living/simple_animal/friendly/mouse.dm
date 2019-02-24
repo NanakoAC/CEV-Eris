@@ -44,6 +44,7 @@
 	universal_speak = FALSE
 	universal_understand = TRUE
 	holder_type = /obj/item/weapon/holder/mouse
+	speed = 1
 	//digest_factor = 0.05 //These are for animal-eating code, not yet ported
 	//min_scan_interval = 2
 	//max_scan_interval = 20
